@@ -12,12 +12,14 @@ config_version=5
 
 config/name="[TOOL] - ThingRef"
 config/tags=PackedStringArray("tool")
+run/main_scene="uid://c1iq05rcjvsyr"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="uid://dryq2mvojle3n"
 
 [autoload]
 
 WorldEvent="*uid://c4kwu4rdhnfbj"
+WorldData="*uid://b8s81vwjq7eph"
 
 [file_customization]
 

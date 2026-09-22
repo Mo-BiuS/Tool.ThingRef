@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://c1iq05rcjvsyr"]
-
-[ext_resource type="Script" uid="uid://bw0r7n6u7tr31" path="res://Yggdrassil/Odhal/Yggdrassil.gd" id="1_arjgi"]
-
-[node name="Yggdrassil" type="Node" unique_id=1369334604]
-script = ExtResource("1_arjgi")

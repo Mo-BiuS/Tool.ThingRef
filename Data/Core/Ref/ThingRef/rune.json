@@ -1,0 +1,16 @@
+{
+	"ThingDef":{
+		"MinorRedRune":{
+			"name":"Minor red rune",
+			"description":"0"
+		},
+		"RedRune":{
+			"name":"Red rune",
+			"description":"1"
+		},
+		"MajorRedRune":{
+			"name":"Major red rune",
+			"description":"2"
+		}
+	}
+}

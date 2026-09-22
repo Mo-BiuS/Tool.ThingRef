@@ -1,0 +1,16 @@
+{
+	"ThingDef":{
+		"MinorRedPotion":{
+			"name":"Minor red potion",
+			"description":"0"
+		},
+		"RedPotion":{
+			"name":"Red potion",
+			"description":"1"
+		},
+		"MajorRedPotion":{
+			"name":"Major red potion",
+			"description":"2"
+		}
+	}
+}
