@@ -1,0 +1,39 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="[TOOL] - ThingRef"
+config/tags=PackedStringArray("tool")
+config/features=PackedStringArray("4.6", "Forward Plus")
+config/icon="uid://dryq2mvojle3n"
+
+[autoload]
+
+WorldEvent="*uid://c4kwu4rdhnfbj"
+
+[file_customization]
+
+folder_colors={
+"res://Data/": "pink",
+"res://Yggdrassil/": "gray",
+"res://Yggdrassil/Data/Constant/": "gray",
+"res://Yggdrassil/Interface/": "green",
+"res://Yggdrassil/Odhal/": "purple",
+"res://Yggdrassil/Ressources/": "orange"
+}
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
+[rendering]
+
+rendering_device/driver.windows="d3d12"
