@@ -19,4 +19,4 @@ func loadFromDict(dict:Dictionary)->bool:
 func clear()->void:
 	pass
 func _to_string() -> String:
-	return "Thing : "+name+ " [ Key:"+str(key)+"\t | Source:"+source+" ]"
+	return "\n[ Thing : "+name+ " \t][ Source:"+source+" ]"

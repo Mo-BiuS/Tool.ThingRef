@@ -30,8 +30,6 @@ func _loadRefInFolder(path:String)->void:
 		var sourceName:=path.get_slice("/",path.get_slice_count("/")-2)
 		root[sourceName] = {}
 		_loadThingDef(allDict,sourceName)
-	
-	print(root)
 
 func _loadThingDef(dict:Dictionary,sourceName:String)->void:
 	if(DictFunc.dictAt(dict,"ThingDef")):
@@ -39,7 +37,8 @@ func _loadThingDef(dict:Dictionary,sourceName:String)->void:
 		for key in dict["ThingDef"].keys():
 			var thing:=ThingDef.new()
 			thing.setMeta(key,sourceName)
-			thing.loadFromDict(dict)
+			thing.loadFromDict(dict["ThingDef"][key])
+			print(thing)
 			root[sourceName]["ThingDef"][key] = thing
 		dict.erase("ThingDef")
 
