@@ -2,15 +2,27 @@
 	"ThingDef":{
 		"MinorRedPotion":{
 			"name":"Minor red potion",
-			"description":"0"
+			"description":"0",
+			"atlasData":{
+				"path":"res://Data/Core/Sprite/Consumables-NoOutline.png",
+				"rect":[0,0,32,32]
+			}
 		},
 		"RedPotion":{
 			"name":"Red potion",
-			"description":"1"
+			"description":"1",
+			"atlasData":{
+				"path":"res://Data/Core/Sprite/Consumables-NoOutline.png",
+				"rect":[0,32,32,32]
+			}
 		},
 		"MajorRedPotion":{
 			"name":"Major red potion",
-			"description":"2"
+			"description":"2",
+			"atlasData":{
+				"path":"res://Data/Core/Sprite/Consumables-NoOutline.png",
+				"rect":[0,64,32,32]
+			}
 		}
 	}
 }

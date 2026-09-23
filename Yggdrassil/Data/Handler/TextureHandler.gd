@@ -1,9 +1,15 @@
 class_name TextureHandler extends Node
 
-var pathToId:Dictionary[String,int] = {}
-var textureArray:Array[Texture2D] = []
-var mutex:=Mutex.new()
+var textureDict:Dictionary[String,Texture2D] = {}
+var textureDictMutex:=Mutex.new()
 
+var pathToId:Dictionary[String,int] = {}
+var pathToIdMutex:=Mutex.new()
+
+var atlasArray:Array[AtlasTexture] = []
+var atlasMutex:=Mutex.new()
+
+#==============================================================================#
 func _ready() -> void:
 	WorldEvent.stateChanged.connect(_stateChanged)
 
@@ -13,37 +19,66 @@ func _stateChanged(_old:E_State.Value,new:E_State.Value)->void:
 			clear()
 
 func clear()->void:
-	mutex.lock()
+	pathToIdMutex.lock()
 	pathToId.clear()
-	textureArray.clear()
-	mutex.unlock()
+	pathToIdMutex.unlock()
+	
+	atlasMutex.lock()
+	atlasArray.clear()
+	atlasMutex.unlock()
+	
+	textureDictMutex.lock()
+	textureDict.clear()
+	textureDictMutex.unlock()
 
-func getId(path:String)->int:
-	mutex.lock()
-	if(pathToId.has(path)):
-		mutex.unlock()
-		return pathToId[path]
-	if(!FileAccess.file_exists(path)):
-		mutex.unlock()
-		return -1
-	
-	var newTexture:=load(path)
-	
-	if(newTexture == null || !newTexture is Texture2D):
-		mutex.unlock()
-		return -1
-	
-	var id = textureArray.size()
-	pathToId[path] = id
-	textureArray.append(newTexture)
-	
-	mutex.unlock()
-	return id
-
-
-func getTexture(id:int)->Texture2D:
+#==============================================================================#
+func _getTexture(path:String)->Texture2D:
 	var rep:Texture2D = null
-	mutex.lock()
-	if(id < textureArray.size()):rep = textureArray[id]
-	mutex.unlock()
+	textureDictMutex.lock()
+	
+	if(textureDict.has(path)):rep = textureDict[path]
+	elif(FileAccess.file_exists(path)):
+		var loadedElement:=load(path)
+		if(loadedElement != null && loadedElement is Texture2D):
+			rep = loadedElement
+			textureDict[path] = rep
+	
+	textureDictMutex.unlock()
 	return rep
+
+#==============================================================================#
+func getAtlasId(path:String,rect:Rect2i)->int:
+	var key := _getAtlasKey(path, rect)
+	
+	pathToIdMutex.lock()
+	if(pathToId.has(key)):
+		var id := pathToId[key]
+		pathToIdMutex.unlock()
+		return id
+	else:
+		var texture = _getTexture(path)
+		if(texture == null):return -1
+		
+		var newAtlas:=AtlasTexture.new()
+		newAtlas.region = rect
+		newAtlas.atlas = texture
+		
+		atlasMutex.lock()
+		var id := atlasArray.size()
+		atlasArray.append(newAtlas)
+		atlasMutex.unlock()
+		
+		pathToId[key] = id
+		pathToIdMutex.unlock()
+		
+		return id
+func getAtlas(id:int)->AtlasTexture:
+	var rep:AtlasTexture = null
+	atlasMutex.lock()
+	if(id >= 0 && id < atlasArray.size()):rep = atlasArray[id]
+	atlasMutex.unlock()
+	return rep
+func _getAtlasKey(texturePath, rect:Rect2i)->String:
+	return texturePath + ":" + (
+		str(rect.position.x) + "," +str(rect.position.y) + "," +
+		str(rect.size.x) + "," +str(rect.size.y))

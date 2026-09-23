@@ -2,15 +2,27 @@
 	"ThingDef":{
 		"MinorRedRune":{
 			"name":"Minor red rune",
-			"description":"0"
+			"description":"0",
+			"atlasData":{
+				"path":"res://Data/Core/Sprite/Consumables-NoOutline.png",
+				"rect":[0,96,32,32]
+			}
 		},
 		"RedRune":{
 			"name":"Red rune",
-			"description":"1"
+			"description":"1",
+			"atlasData":{
+				"path":"res://Data/Core/Sprite/Consumables-NoOutline.png",
+				"rect":[0,128,32,32]
+			}
 		},
 		"MajorRedRune":{
 			"name":"Major red rune",
-			"description":"2"
+			"description":"2",
+			"atlasData":{
+				"path":"res://Data/Core/Sprite/Consumables-NoOutline.png",
+				"rect":[0,160,32,32]
+			}
 		}
 	}
 }

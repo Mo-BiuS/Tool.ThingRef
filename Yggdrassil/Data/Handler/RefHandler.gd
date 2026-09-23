@@ -30,6 +30,8 @@ func _loadRefInFolder(path:String)->void:
 		var sourceName:=path.get_slice("/",path.get_slice_count("/")-2)
 		root[sourceName] = {}
 		_loadThingDef(allDict,sourceName)
+	
+	print(root)
 
 func _loadThingDef(dict:Dictionary,sourceName:String)->void:
 	if(DictFunc.dictAt(dict,"ThingDef")):
