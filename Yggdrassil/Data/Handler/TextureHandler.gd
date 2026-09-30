@@ -3,11 +3,14 @@ class_name TextureHandler extends Node
 var textureDict:Dictionary[String,Texture2D] = {}
 var textureDictMutex:=Mutex.new()
 
-var pathToId:Dictionary[String,int] = {}
-var pathToIdMutex:=Mutex.new()
+var keyToId:Dictionary[String,int] = {}
+var keyToIdMutex:=Mutex.new()
 
 var atlasArray:Array[AtlasTexture] = []
 var atlasMutex:=Mutex.new()
+
+var spriteFramesArray:Array[SpriteFrames] = []
+var spriteFramesMutex:=Mutex.new()
 
 #==============================================================================#
 func _ready() -> void:
@@ -19,9 +22,9 @@ func _stateChanged(_old:E_State.Value,new:E_State.Value)->void:
 			clear()
 
 func clear()->void:
-	pathToIdMutex.lock()
-	pathToId.clear()
-	pathToIdMutex.unlock()
+	keyToIdMutex.lock()
+	keyToId.clear()
+	keyToIdMutex.unlock()
 	
 	atlasMutex.lock()
 	atlasArray.clear()
@@ -30,6 +33,10 @@ func clear()->void:
 	textureDictMutex.lock()
 	textureDict.clear()
 	textureDictMutex.unlock()
+	
+	spriteFramesMutex.lock()
+	spriteFramesArray.clear()
+	spriteFramesMutex.unlock()
 
 #==============================================================================#
 func _getTexture(path:String)->Texture2D:
@@ -45,40 +52,46 @@ func _getTexture(path:String)->Texture2D:
 	
 	textureDictMutex.unlock()
 	return rep
-
-#==============================================================================#
-func getAtlasId(path:String,rect:Rect2i)->int:
-	var key := _getAtlasKey(path, rect)
-	
-	pathToIdMutex.lock()
-	if(pathToId.has(key)):
-		var id := pathToId[key]
-		pathToIdMutex.unlock()
+func _getKeyFromId(key:String)->int:
+	keyToIdMutex.lock()
+	if(keyToId.has(key)):
+		var id := keyToId[key]
+		keyToIdMutex.unlock()
 		return id
-	else:
-		var texture = _getTexture(path)
-		if(texture == null):return -1
+	keyToIdMutex.unlock()
+	return -1
+#==============================================================================#
+func getAtlasId(data:AtlasLoadData)->int:
+	var id:=_getKeyFromId(data.key)
+	if(id == -1):
+		var texture = _getTexture(data.texturePath)
+		if(texture == null):
+			keyToIdMutex.unlock()
+			return -1
 		
 		var newAtlas:=AtlasTexture.new()
-		newAtlas.region = rect
+		newAtlas.region = data.rect
 		newAtlas.atlas = texture
 		
 		atlasMutex.lock()
-		var id := atlasArray.size()
+		id = atlasArray.size()
 		atlasArray.append(newAtlas)
 		atlasMutex.unlock()
 		
-		pathToId[key] = id
-		pathToIdMutex.unlock()
-		
-		return id
+		keyToId[data.key] = id
+		keyToIdMutex.unlock()
+	
+	return id
 func getAtlas(id:int)->AtlasTexture:
 	var rep:AtlasTexture = null
 	atlasMutex.lock()
 	if(id >= 0 && id < atlasArray.size()):rep = atlasArray[id]
 	atlasMutex.unlock()
 	return rep
-func _getAtlasKey(texturePath, rect:Rect2i)->String:
-	return texturePath + ":" + (
-		str(rect.position.x) + "," +str(rect.position.y) + "," +
-		str(rect.size.x) + "," +str(rect.size.y))
+
+#==============================================================================#
+func getSpriteFramesId(data:SpriteFramesLoadData)->int:
+	var id:=_getKeyFromId(data.key)
+	if(id == -1):
+		pass
+	return -1

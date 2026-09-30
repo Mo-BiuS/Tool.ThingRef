@@ -2,10 +2,5 @@
 
 [ext_resource type="Script" uid="uid://bw0r7n6u7tr31" path="res://Yggdrassil/Odhal/Odhal.gd" id="1_5fh3y"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_5fh3y"]
-
 [node name="Odhal" type="Node" unique_id=1369334604]
 script = ExtResource("1_5fh3y")
-
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2068865796]
-texture = SubResource("AtlasTexture_5fh3y")

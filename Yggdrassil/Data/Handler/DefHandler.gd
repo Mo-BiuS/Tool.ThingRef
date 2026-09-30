@@ -1,4 +1,4 @@
-class_name RefHandler extends Node
+class_name DefHandler extends Node
 
 var _loadingThread:Thread
 
@@ -28,18 +28,17 @@ func _loadRefInFolder(path:String)->void:
 	var allDict:Dictionary = _getDictFromFolder(path+"Ref")
 	if(!allDict.is_empty()):
 		var sourceName:=path.get_slice("/",path.get_slice_count("/")-2)
-		root[sourceName] = {}
+		root["ThingDef"] = {}
 		_loadThingDef(allDict,sourceName)
 
 func _loadThingDef(dict:Dictionary,sourceName:String)->void:
 	if(DictFunc.dictAt(dict,"ThingDef")):
-		root[sourceName]["ThingDef"] = {}
+		root["ThingDef"] = {}
 		for key in dict["ThingDef"].keys():
 			var thing:=ThingDef.new()
 			thing.setMeta(key,sourceName)
 			thing.loadFromDict(dict["ThingDef"][key])
-			print(thing)
-			root[sourceName]["ThingDef"][key] = thing
+			root["ThingDef"][key] = thing
 		dict.erase("ThingDef")
 
 #==============================================================================#
@@ -54,9 +53,11 @@ func _getDictFromFolder(path:String)->Dictionary:
 	while fileName != "":
 		if dir.current_is_dir():
 			DictFunc.mergeDict(rep,_getDictFromFolder(path+"/"+fileName))
-		else:
+		elif(fileName.ends_with(".json")):
 			var json_as_text = FileAccess.get_file_as_string(path+"/"+fileName)
-			DictFunc.mergeDict(rep,JSON.parse_string(json_as_text))
+			var parsedData=JSON.parse_string(json_as_text)
+			if(parsedData != null && parsedData is Dictionary):
+				DictFunc.mergeDict(rep,JSON.parse_string(json_as_text))
 		fileName = dir.get_next()
 	
 	return rep
