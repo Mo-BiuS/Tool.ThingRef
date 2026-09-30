@@ -6,6 +6,7 @@ var textureHandler:=TextureHandler.new()
 func _ready() -> void:
 	add_child(defHandler)
 	add_child(textureHandler)
+	defHandler.finishedLoading.connect(finishedLoading)
 	WorldEvent.stateChanged.connect(_stateChanged)
 
 func _stateChanged(_old:E_State.Value,new:E_State.Value)->void:
@@ -14,3 +15,6 @@ func _stateChanged(_old:E_State.Value,new:E_State.Value)->void:
 			defHandler.clear()
 			textureHandler.clear()
 			defHandler.startLoading()
+
+func finishedLoading()->void:
+	WorldEvent.setState(E_State.LOADING_RESSOURCE_FINISHED)

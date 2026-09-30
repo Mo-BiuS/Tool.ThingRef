@@ -3,7 +3,7 @@ class_name ThingDef extends RefCounted
 var key:String = ""
 
 var name:String = ""
-var descritpion:String = ""
+var description:String = ""
 
 var atlasId:int = -1
 var spriteFramesId:int = -1
@@ -12,7 +12,7 @@ func setMeta(k:String)->void:
 	key = k
 func loadFromDict(dict:Dictionary)->bool:
 	if(DictFunc.stringAt(dict,"name")):name = dict["name"]
-	if(DictFunc.stringAt(dict,"descritpion")):descritpion = dict["descritption"]
+	if(DictFunc.stringAt(dict,"description")):description = dict["description"]
 	atlasId = WorldData.textureHandler.getAtlasIdFromDict(dict)
 	spriteFramesId = WorldData.textureHandler.getSpriteFramesIdFromDict(dict)
 	return true

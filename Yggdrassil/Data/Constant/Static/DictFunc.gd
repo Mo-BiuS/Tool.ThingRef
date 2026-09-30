@@ -12,7 +12,7 @@ static func mergeDict(d1:Dictionary,d2:Dictionary)->void:
 
 #==================================================================================================#
 static func intAt(dict:Dictionary,key:String)->bool:
-	return dict.has(key) && (dict[key] is int || (dict[key] is float && dict[key] == float(int(dict[key]))))
+	return dict.has(key) && _isInt(dict[key])
 static func floatAt(dict:Dictionary,key:String)->bool:
 	return dict.has(key) && (dict[key] is int || dict[key] is float)
 static func stringAt(dict:Dictionary,key:String)->bool:
@@ -30,10 +30,10 @@ static func arrayAt(dict:Dictionary,key:String)->bool:
 static func rect2iAt(dict:Dictionary,key:String)->bool:
 	if(!dict.has(key) || !(dict[key] is Array)):return false
 	var test:Array = dict[key]
-	
+
 	if(test.size() != 4):return false
 	for i in test:
-		if ! (i is int || i is float):return false
+		if ! _isInt(i):return false
 	return true
 static func getRect2i(dict:Dictionary,key:String)->Rect2i:
 	var test:Array = dict[key]
@@ -43,9 +43,11 @@ static func vector2iAt(dict:Dictionary,key:String)->bool:
 	var test:Array = dict[key]
 	if(test.size() != 2):return false
 	for i in test:
-		if ! (i is int || i is float):return false
+		if ! _isInt(i):return false
 	return true
 static func getVector2i(dict:Dictionary,key:String)->Vector2i:
 	var test:Array = dict[key]
 	return Vector2i(test[0],test[1])
 #==================================================================================================#
+static func _isInt(value)->bool:
+	return (value is int || (value is float && value == float(int(value))))

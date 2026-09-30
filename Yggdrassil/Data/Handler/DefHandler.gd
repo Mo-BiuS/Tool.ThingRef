@@ -13,13 +13,19 @@ var _loadingThread:Thread
 
 var root:Dictionary[String,Dictionary]
 
+signal finishedLoading
+
 #==============================================================================#
 func startLoading()->void:
 	_loadingThread = Thread.new()
 	_loadingThread.start(_loading)
+func _endLoading()->void:
+	if _loadingThread != null and _loadingThread.is_started():
+		_loadingThread.wait_to_finish()
+	finishedLoading.emit()
 func _loading()->void:
-	_loadRefFromDict(_loadAllDict())
-	WorldEvent.setState(E_State.LOADING_RESSOURCE_FINISHED)
+	_loadDefFromDict(_loadAllDict())
+	call_deferred("_endLoading")
 
 func _loadAllDict()->Dictionary:
 	var rep := {}
@@ -30,7 +36,7 @@ func _loadAllDict()->Dictionary:
 			DictFunc.mergeDict(rep,_getDictFromFolder(path))
 	return rep
 
-func _loadRefFromDict(allDict:Dictionary)->void:
+func _loadDefFromDict(allDict:Dictionary)->void:
 	if(allDict.is_empty()):return
 	
 	for script in defLoadOrder:
@@ -40,7 +46,7 @@ func _loadRefFromDict(allDict:Dictionary)->void:
 				root[scriptName] = {}
 				var scriptDict:Dictionary = allDict[scriptName]
 				for key in scriptDict.keys():
-					var thing:=ThingDef.new()
+					var thing=script.new()
 					if(thing.loadFromDict(scriptDict[key])):
 						thing.setMeta(key)
 						root[scriptName][key] = thing
@@ -78,3 +84,6 @@ func _loadJsonFromPath(path:String)->Dictionary:
 #==============================================================================#
 func clear()->void:
 	root.clear()
+func _exit_tree() -> void:
+	if _loadingThread != null and _loadingThread.is_started():
+		_loadingThread.wait_to_finish()

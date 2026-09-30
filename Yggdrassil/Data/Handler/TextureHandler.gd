@@ -37,9 +37,11 @@ func _getTexture(path:String)->Texture2D:
 	
 	if(textureDict.has(path)):rep = textureDict[path]
 	elif(FileAccess.file_exists(path)):
+		textureDictMutex.unlock()
 		var image:=Image.load_from_file(path)
 		if(image != null && image is Image):
 			rep = ImageTexture.create_from_image(image)
+			textureDictMutex.lock()
 			textureDict[path] = rep
 	
 	textureDictMutex.unlock()
