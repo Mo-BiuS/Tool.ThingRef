@@ -4,3 +4,6 @@
 
 [node name="Odhal" type="Node" unique_id=1369334604]
 script = ExtResource("1_5fh3y")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=189038606]
+zoom = Vector2(2, 2)

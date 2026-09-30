@@ -1,45 +1,52 @@
 class_name DefHandler extends Node
 
-var _loadingThread:Thread
+const LOAD_LIST:="res://LoadList.json"
 
-const CORE_FOLDER:="res://Data/Core/"
+var defKeys:Dictionary[GDScript,String] = {
+	ThingDef:"ThingDef"
+}
+var defLoadOrder:Array[GDScript] = [
+	ThingDef
+]
+
+var _loadingThread:Thread
 
 var root:Dictionary[String,Dictionary]
 
-func _ready() -> void:
-	WorldEvent.stateChanged.connect(_stateChanged)
-
-func _stateChanged(_old:E_State.Value,new:E_State.Value)->void:
-	match new:
-		E_State.LOADING_RESSOURCE_START:
-			clear()
-			_loadingThread = Thread.new()
-			_loadingThread.start(_loading)
-
 #==============================================================================#
+func startLoading()->void:
+	_loadingThread = Thread.new()
+	_loadingThread.start(_loading)
 func _loading()->void:
-	_loadRefInFolder(CORE_FOLDER)
+	_loadRefFromDict(_loadAllDict())
 	WorldEvent.setState(E_State.LOADING_RESSOURCE_FINISHED)
 
-func _loadRefInFolder(path:String)->void:
-	var dir = DirAccess.open(path)
-	if(dir == null):return
-	
-	var allDict:Dictionary = _getDictFromFolder(path+"Ref")
-	if(!allDict.is_empty()):
-		var sourceName:=path.get_slice("/",path.get_slice_count("/")-2)
-		root["ThingDef"] = {}
-		_loadThingDef(allDict,sourceName)
+func _loadAllDict()->Dictionary:
+	var rep := {}
+	var loadDict:=_loadJsonFromPath(LOAD_LIST)
+	if(DictFunc.arrayAt(loadDict,"LoadList")):
+		var loadArray:Array = loadDict["LoadList"]
+		for path in loadArray:
+			DictFunc.mergeDict(rep,_getDictFromFolder(path))
+	return rep
 
-func _loadThingDef(dict:Dictionary,sourceName:String)->void:
-	if(DictFunc.dictAt(dict,"ThingDef")):
-		root["ThingDef"] = {}
-		for key in dict["ThingDef"].keys():
-			var thing:=ThingDef.new()
-			thing.setMeta(key,sourceName)
-			thing.loadFromDict(dict["ThingDef"][key])
-			root["ThingDef"][key] = thing
-		dict.erase("ThingDef")
+func _loadRefFromDict(allDict:Dictionary)->void:
+	if(allDict.is_empty()):return
+	
+	for script in defLoadOrder:
+		if(defKeys.has(script)):
+			var scriptName := defKeys[script]
+			if(DictFunc.dictAt(allDict,scriptName)):
+				root[scriptName] = {}
+				var scriptDict:Dictionary = allDict[scriptName]
+				for key in scriptDict.keys():
+					var thing:=ThingDef.new()
+					if(thing.loadFromDict(scriptDict[key])):
+						thing.setMeta(key)
+						root[scriptName][key] = thing
+				allDict.erase(scriptName)
+	
+	if(!allDict.is_empty()):return
 
 #==============================================================================#
 func _getDictFromFolder(path:String)->Dictionary:
@@ -52,15 +59,22 @@ func _getDictFromFolder(path:String)->Dictionary:
 	var fileName = dir.get_next()
 	while fileName != "":
 		if dir.current_is_dir():
-			DictFunc.mergeDict(rep,_getDictFromFolder(path+"/"+fileName))
+			DictFunc.mergeDict(rep,_getDictFromFolder(path.path_join(fileName)))
 		elif(fileName.ends_with(".json")):
-			var json_as_text = FileAccess.get_file_as_string(path+"/"+fileName)
-			var parsedData=JSON.parse_string(json_as_text)
-			if(parsedData != null && parsedData is Dictionary):
-				DictFunc.mergeDict(rep,JSON.parse_string(json_as_text))
+			DictFunc.mergeDict(rep,_loadJsonFromPath(path.path_join(fileName)))
 		fileName = dir.get_next()
-	
+	dir.list_dir_end()
 	return rep
 
+func _loadJsonFromPath(path:String)->Dictionary:
+	if !FileAccess.file_exists(path) :
+		push_error("File not found : "+path)
+	var json := JSON.new()
+	if(json.parse(FileAccess.get_file_as_string(path)) != OK):
+		push_error("%s ligne %d : %s" % [path, json.get_error_line(), json.get_error_message()])
+	elif(json.data is Dictionary):
+		return json.data
+	return {}
+#==============================================================================#
 func clear()->void:
-	pass
+	root.clear()

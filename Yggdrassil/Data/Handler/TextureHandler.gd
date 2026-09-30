@@ -13,14 +13,6 @@ var spriteFramesArray:Array[SpriteFrames] = []
 var spriteFramesMutex:=Mutex.new()
 
 #==============================================================================#
-func _ready() -> void:
-	WorldEvent.stateChanged.connect(_stateChanged)
-
-func _stateChanged(_old:E_State.Value,new:E_State.Value)->void:
-	match new:
-		E_State.LOADING_RESSOURCE_START:
-			clear()
-
 func clear()->void:
 	keyToIdMutex.lock()
 	keyToId.clear()
@@ -45,14 +37,14 @@ func _getTexture(path:String)->Texture2D:
 	
 	if(textureDict.has(path)):rep = textureDict[path]
 	elif(FileAccess.file_exists(path)):
-		var loadedElement:=load(path)
-		if(loadedElement != null && loadedElement is Texture2D):
-			rep = loadedElement
+		var image:=Image.load_from_file(path)
+		if(image != null && image is Image):
+			rep = ImageTexture.create_from_image(image)
 			textureDict[path] = rep
 	
 	textureDictMutex.unlock()
 	return rep
-func _getKeyFromId(key:String)->int:
+func _getIdFromKey(key:String)->int:
 	keyToIdMutex.lock()
 	if(keyToId.has(key)):
 		var id := keyToId[key]
@@ -61,23 +53,26 @@ func _getKeyFromId(key:String)->int:
 	keyToIdMutex.unlock()
 	return -1
 #==============================================================================#
-func getAtlasId(data:AtlasLoadData)->int:
-	var id:=_getKeyFromId(data.key)
+func getAtlasIdFromDict(dict:Dictionary)->int:
+	if(!DictFunc.dictAt(dict,"atlasData")):return -1
+	if(!AtlasLoadData.isValidData(dict["atlasData"])):return -1
+	
+	return _getAtlasId(AtlasLoadData.loadDataFrom(dict["atlasData"]))
+func _getAtlasId(data:AtlasLoadData)->int:
+	var id:=_getIdFromKey(data.key)
 	if(id == -1):
 		var texture = _getTexture(data.texturePath)
 		if(texture == null):
-			keyToIdMutex.unlock()
 			return -1
 		
-		var newAtlas:=AtlasTexture.new()
-		newAtlas.region = data.rect
-		newAtlas.atlas = texture
+		var newAtlas:=data.genAtlas(texture)
 		
 		atlasMutex.lock()
 		id = atlasArray.size()
 		atlasArray.append(newAtlas)
 		atlasMutex.unlock()
 		
+		keyToIdMutex.lock()
 		keyToId[data.key] = id
 		keyToIdMutex.unlock()
 	
@@ -90,8 +85,31 @@ func getAtlas(id:int)->AtlasTexture:
 	return rep
 
 #==============================================================================#
-func getSpriteFramesId(data:SpriteFramesLoadData)->int:
-	var id:=_getKeyFromId(data.key)
+func getSpriteFramesIdFromDict(dict:Dictionary)->int:
+	if(!DictFunc.dictAt(dict,"spriteFramesData")):return -1
+	if(!SpriteFramesLoadData.isValidData(dict["spriteFramesData"])):return -1
+	return _getSpriteFramesId(SpriteFramesLoadData.loadDataFrom(dict["spriteFramesData"]))
+func _getSpriteFramesId(data:SpriteFramesLoadData)->int:
+	var id:=_getIdFromKey(data.key)
 	if(id == -1):
-		pass
-	return -1
+		var texture = _getTexture(data.texturePath)
+		if(texture == null):
+			return -1
+		
+		var newSpriteFrames := data.genSpriteFrames(texture)
+		
+		spriteFramesMutex.lock()
+		id = spriteFramesArray.size()
+		spriteFramesArray.append(newSpriteFrames)
+		spriteFramesMutex.unlock()
+		
+		keyToIdMutex.lock()
+		keyToId[data.key] = id
+		keyToIdMutex.unlock()
+	return id
+func getSpriteFrames(id:int)->SpriteFrames:
+	var rep:SpriteFrames = null
+	spriteFramesMutex.lock()
+	if(id >= 0 && id < spriteFramesArray.size()):rep = spriteFramesArray[id]
+	spriteFramesMutex.unlock()
+	return rep

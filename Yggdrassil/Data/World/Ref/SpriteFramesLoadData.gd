@@ -24,6 +24,18 @@ static func loadDataFrom(dict:Dictionary)->SpriteFramesLoadData:
 	rep._genKey()
 	return rep
 
+func genSpriteFrames(texture:Texture2D)->SpriteFrames:
+	var rep := SpriteFrames.new()
+	rep.remove_animation(&"default")
+	for animName:String in animDict.keys():
+		rep.add_animation(animName)
+		for pos:Vector2i in animDict[animName]:
+			var frame:=AtlasTexture.new()
+			frame.region = Rect2i(pos*frameSize,frameSize)
+			frame.atlas = texture
+			rep.add_frame(animName,frame)
+	return rep
+
 func _genKey()->void:
 	key="S:%s:%d:%d" % [texturePath,frameSize.x, frameSize.y]
 	for animKey:String in animDict.keys():

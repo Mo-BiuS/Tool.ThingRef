@@ -21,10 +21,16 @@ config/icon="uid://dryq2mvojle3n"
 WorldEvent="*uid://c4kwu4rdhnfbj"
 WorldData="*uid://b8s81vwjq7eph"
 
+[display]
+
+window/size/viewport_width=800
+window/size/viewport_height=800
+
 [file_customization]
 
 folder_colors={
 "res://Data/": "pink",
+"res://Mods/": "pink",
 "res://Yggdrassil/": "gray",
 "res://Yggdrassil/Data/Constant/": "gray",
 "res://Yggdrassil/Interface/": "green",
@@ -38,4 +44,5 @@ folder_colors={
 
 [rendering]
 
+textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"

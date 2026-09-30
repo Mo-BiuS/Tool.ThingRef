@@ -10,8 +10,18 @@ func _stateChanged(_old:E_State.Value,new:E_State.Value)->void:
 			print("START")
 		E_State.LOADING_RESSOURCE_FINISHED:
 			print("FINISHED")
-			for t:ThingDef in WorldData.defHandler.root["ThingDef"].values():
-				var s:=Sprite2D.new()
-				s.texture = WorldData.textureHandler.getAtlas(t.atlasId)
-				s.position = Vector2i(randi()%100,randi()%100)
-				add_child(s)
+			if(WorldData.defHandler.root.has("ThingDef")):
+				for t:ThingDef in WorldData.defHandler.root["ThingDef"].values():
+					if(t.atlasId != -1):
+						var s:=Sprite2D.new()
+						s.texture = WorldData.textureHandler.getAtlas(t.atlasId)
+						s.position = Vector2i(randi()%400-200,randi()%400-200)
+						add_child(s)
+					if(t.spriteFramesId != -1):
+						var sf = WorldData.textureHandler.getSpriteFrames(t.spriteFramesId)
+						for n:String in sf.get_animation_names():
+							var s:=AnimatedSprite2D.new()
+							s.sprite_frames = sf
+							s.play(n)
+							s.position = Vector2i(randi()%400-200,randi()%400-200)
+							add_child(s)

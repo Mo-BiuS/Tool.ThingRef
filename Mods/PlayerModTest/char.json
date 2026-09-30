@@ -4,11 +4,11 @@
 			"name":"Player",
 			"description":"huwawawawa",
 			"spriteFramesData":{
-				"path":"res://Data/Core/Sprite/Shade.png",
-				"frameSize":[32,42],
+				"path":"res://Mods/PlayerModTest/Shade.png",
+				"frameSize":[32,48],
 				"animations":{
-					"north":[[0,3],[1,3],[2,3],[3,3]],
-					"east":[[0,4],[1,4],[2,4],[3,4]],
+					"north":[[0,2],[1,2],[2,2],[3,2]],
+					"east":[[0,3],[1,3],[2,3],[3,3]],
 					"south":[[0,0],[1,0],[2,0],[3,0]],
 					"west":[[0,1],[1,1],[2,1],[3,1]]
 				}

@@ -2,7 +2,7 @@ class_name AtlasLoadData extends RefCounted
 
 var texturePath:String
 var rect:Rect2i
-var key
+var key:String
 
 static func isValidData(dict:Dictionary)->bool:
 	if(!DictFunc.fileAt(dict,"path")):return false
@@ -13,6 +13,13 @@ static func loadDataFrom(dict:Dictionary)->AtlasLoadData:
 	rep.texturePath = dict["path"]
 	rep.rect = DictFunc.getRect2i(dict,"rect")
 	rep._genKey()
+	return rep
+
+
+func genAtlas(texture:Texture2D)->AtlasTexture:
+	var rep:=AtlasTexture.new()
+	rep.region = rect
+	rep.atlas = texture
 	return rep
 func _genKey()->void:
 	key = "A:%s:%d,%d,%d,%d" % [texturePath, rect.position.x, rect.position.y, rect.size.x, rect.size.y]
