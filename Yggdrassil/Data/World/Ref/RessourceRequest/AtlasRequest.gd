@@ -1,20 +1,19 @@
-class_name AtlasLoadData extends RefCounted
+class_name AtlasRequest extends TextureRequest
 
-var texturePath:String
 var rect:Rect2i
-var key:String
 
 static func isValidData(dict:Dictionary)->bool:
 	if(!DictFunc.fileAt(dict,"path")):return false
 	if(!DictFunc.rect2iAt(dict,"rect")):return false
 	return true
-static func loadDataFrom(dict:Dictionary)->AtlasLoadData:
-	var rep:=AtlasLoadData.new()
+static func createRequest(dest:ThingDef,prop:String,dict:Dictionary)->AtlasRequest:
+	var rep:=AtlasRequest.new()
+	rep.destination = dest
+	rep.property = prop
 	rep.texturePath = dict["path"]
 	rep.rect = DictFunc.getRect2i(dict,"rect")
 	rep._genKey()
 	return rep
-
 
 func genAtlas(texture:Texture2D)->AtlasTexture:
 	var rep:=AtlasTexture.new()

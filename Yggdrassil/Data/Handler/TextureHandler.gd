@@ -1,4 +1,4 @@
-class_name TextureHandler extends Node
+class_name TextureHandler extends RefCounted
 
 var textureDict:Dictionary[String,Texture2D] = {}
 var textureDictMutex:=Mutex.new()
@@ -12,23 +12,25 @@ var atlasMutex:=Mutex.new()
 var spriteFramesArray:Array[SpriteFrames] = []
 var spriteFramesMutex:=Mutex.new()
 
+var _loadingThread:Thread
+var keepLoading:bool
+var workList:=DoubleLinkedList.new()
+signal finishedLoading
 #==============================================================================#
-func clear()->void:
-	keyToIdMutex.lock()
-	keyToId.clear()
-	keyToIdMutex.unlock()
-	
-	atlasMutex.lock()
-	atlasArray.clear()
-	atlasMutex.unlock()
-	
-	textureDictMutex.lock()
-	textureDict.clear()
-	textureDictMutex.unlock()
-	
-	spriteFramesMutex.lock()
-	spriteFramesArray.clear()
-	spriteFramesMutex.unlock()
+func startLoading()->void:
+	keepLoading = true
+	_loadingThread = Thread.new()
+	_loadingThread.start(_loading)
+func _loading()->void:
+	while keepLoading || !workList.isEmpty():
+		var request:TextureRequest = workList.popFront()
+		if(request is AtlasRequest):_loadAtlas(request)
+		if(request is SpriteFramesRequest):_loadSpriteFrames(request)
+	call_deferred("_endLoading")
+func _endLoading()->void:
+	if _loadingThread != null and _loadingThread.is_started():
+		_loadingThread.wait_to_finish()
+	finishedLoading.emit()
 
 #==============================================================================#
 func _getTexture(path:String)->Texture2D:
@@ -55,19 +57,22 @@ func _getIdFromKey(key:String)->int:
 	keyToIdMutex.unlock()
 	return -1
 #==============================================================================#
-func getAtlasIdFromDict(dict:Dictionary)->int:
+func newAtlasRequest(dest:ThingDef,prop:String,dict:Dictionary)->int:
+	if(!(prop in dest)):return -1
 	if(!DictFunc.dictAt(dict,"atlasData")):return -1
-	if(!AtlasLoadData.isValidData(dict["atlasData"])):return -1
+	if(!AtlasRequest.isValidData(dict["atlasData"])):return -1
 	
-	return _getAtlasId(AtlasLoadData.loadDataFrom(dict["atlasData"]))
-func _getAtlasId(data:AtlasLoadData)->int:
-	var id:=_getIdFromKey(data.key)
+	var request:=AtlasRequest.createRequest(dest,prop,dict["atlasData"])
+	workList.pushBack(request)
+	return 0
+func _loadAtlas(request:AtlasRequest)->int:
+	var id:=_getIdFromKey(request.key)
 	if(id == -1):
-		var texture = _getTexture(data.texturePath)
+		var texture = _getTexture(request.texturePath)
 		if(texture == null):
 			return -1
 		
-		var newAtlas:=data.genAtlas(texture)
+		var newAtlas:=request.genAtlas(texture)
 		
 		atlasMutex.lock()
 		id = atlasArray.size()
@@ -75,11 +80,12 @@ func _getAtlasId(data:AtlasLoadData)->int:
 		atlasMutex.unlock()
 		
 		keyToIdMutex.lock()
-		keyToId[data.key] = id
+		keyToId[request.key] = id
 		keyToIdMutex.unlock()
 	
+	request.destination.set_deferred(request.property, id)
 	return id
-func getAtlas(id:int)->AtlasTexture:
+func getAtlasFromId(id:int)->AtlasTexture:
 	var rep:AtlasTexture = null
 	atlasMutex.lock()
 	if(id >= 0 && id < atlasArray.size()):rep = atlasArray[id]
@@ -87,18 +93,22 @@ func getAtlas(id:int)->AtlasTexture:
 	return rep
 
 #==============================================================================#
-func getSpriteFramesIdFromDict(dict:Dictionary)->int:
+func newSpriteFrameRequest(dest:ThingDef,prop:String,dict:Dictionary)->int:
+	if(!(prop in dest)):return -1
 	if(!DictFunc.dictAt(dict,"spriteFramesData")):return -1
-	if(!SpriteFramesLoadData.isValidData(dict["spriteFramesData"])):return -1
-	return _getSpriteFramesId(SpriteFramesLoadData.loadDataFrom(dict["spriteFramesData"]))
-func _getSpriteFramesId(data:SpriteFramesLoadData)->int:
-	var id:=_getIdFromKey(data.key)
+	if(!SpriteFramesRequest.isValidData(dict["spriteFramesData"])):return -1
+	
+	var request:=SpriteFramesRequest.createRequest(dest,prop,dict["spriteFramesData"])
+	workList.pushBack(request)
+	return 0
+func _loadSpriteFrames(request:SpriteFramesRequest)->int:
+	var id:=_getIdFromKey(request.key)
 	if(id == -1):
-		var texture = _getTexture(data.texturePath)
+		var texture = _getTexture(request.texturePath)
 		if(texture == null):
 			return -1
 		
-		var newSpriteFrames := data.genSpriteFrames(texture)
+		var newSpriteFrames := request.genSpriteFrames(texture)
 		
 		spriteFramesMutex.lock()
 		id = spriteFramesArray.size()
@@ -106,12 +116,32 @@ func _getSpriteFramesId(data:SpriteFramesLoadData)->int:
 		spriteFramesMutex.unlock()
 		
 		keyToIdMutex.lock()
-		keyToId[data.key] = id
+		keyToId[request.key] = id
 		keyToIdMutex.unlock()
+	request.destination.set_deferred(request.property, id)
 	return id
-func getSpriteFrames(id:int)->SpriteFrames:
+func getSpriteFramesFromId(id:int)->SpriteFrames:
 	var rep:SpriteFrames = null
 	spriteFramesMutex.lock()
 	if(id >= 0 && id < spriteFramesArray.size()):rep = spriteFramesArray[id]
 	spriteFramesMutex.unlock()
 	return rep
+#==============================================================================#
+func clear()->void:
+	keyToIdMutex.lock()
+	keyToId.clear()
+	keyToIdMutex.unlock()
+	
+	atlasMutex.lock()
+	atlasArray.clear()
+	atlasMutex.unlock()
+	
+	textureDictMutex.lock()
+	textureDict.clear()
+	textureDictMutex.unlock()
+	
+	spriteFramesMutex.lock()
+	spriteFramesArray.clear()
+	spriteFramesMutex.unlock()
+	
+	workList.clear()

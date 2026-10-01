@@ -1,9 +1,7 @@
-class_name SpriteFramesLoadData extends RefCounted
+class_name SpriteFramesRequest extends TextureRequest
 
-var texturePath:String
 var frameSize:Vector2i
 var animDict:Dictionary[String,Array]
-var key:String
 
 static func isValidData(dict:Dictionary)->bool:
 	if(!DictFunc.fileAt(dict,"path")):return false
@@ -14,8 +12,10 @@ static func isValidData(dict:Dictionary)->bool:
 	for animKey in animTestDict.keys():
 		if(!(animKey is String && animTestDict[animKey] is Array && ArrayFunc.vector2iArrayAt(animTestDict[animKey]))):return false
 	return true
-static func loadDataFrom(dict:Dictionary)->SpriteFramesLoadData:
-	var rep:=SpriteFramesLoadData.new()
+static func createRequest(dest:ThingDef,prop:String,dict:Dictionary)->SpriteFramesRequest:
+	var rep:=SpriteFramesRequest.new()
+	rep.destination = dest
+	rep.property = prop
 	rep.texturePath = dict["path"]
 	rep.frameSize = DictFunc.getVector2i(dict,"frameSize")
 	var subDict:Dictionary=dict["animations"]

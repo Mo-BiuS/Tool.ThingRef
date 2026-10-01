@@ -1,9 +1,10 @@
 [gd_scene format=3 uid="uid://c1iq05rcjvsyr"]
 
 [ext_resource type="Script" uid="uid://bw0r7n6u7tr31" path="res://Yggdrassil/Odhal/Odhal.gd" id="1_5fh3y"]
+[ext_resource type="PackedScene" uid="uid://c7p5yk8esy24h" path="res://Yggdrassil/Odhal/Playtest.tscn" id="2_ticrg"]
 
-[node name="Odhal" type="Node" unique_id=1369334604]
+[node name="Odhal" type="Node" unique_id=1369334604 node_paths=PackedStringArray("playtest")]
 script = ExtResource("1_5fh3y")
+playtest = NodePath("Playtest")
 
-[node name="Camera2D" type="Camera2D" parent="." unique_id=189038606]
-zoom = Vector2(2, 2)
+[node name="Playtest" parent="." unique_id=1513531109 instance=ExtResource("2_ticrg")]

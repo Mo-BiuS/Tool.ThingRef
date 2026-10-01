@@ -1,4 +1,4 @@
-class_name DefHandler extends Node
+class_name DefHandler extends RefCounted
 
 const LOAD_LIST:="res://LoadList.json"
 
@@ -11,7 +11,7 @@ var defLoadOrder:Array[GDScript] = [
 
 var _loadingThread:Thread
 
-var root:Dictionary[String,Dictionary]
+var root:Dictionary[GDScript,Dictionary]
 
 signal finishedLoading
 
@@ -43,17 +43,21 @@ func _loadDefFromDict(allDict:Dictionary)->void:
 		if(defKeys.has(script)):
 			var scriptName := defKeys[script]
 			if(DictFunc.dictAt(allDict,scriptName)):
-				root[scriptName] = {}
+				root[script] = {}
 				var scriptDict:Dictionary = allDict[scriptName]
 				for key in scriptDict.keys():
 					var thing=script.new()
 					if(thing.loadFromDict(scriptDict[key])):
 						thing.setMeta(key)
-						root[scriptName][key] = thing
+						root[script][key] = thing
 				allDict.erase(scriptName)
 	
 	if(!allDict.is_empty()):return
 
+#==============================================================================#
+func getDefCategories(script:GDScript)->Dictionary:
+	if(root.has(script)):return root[script]
+	else:return {}
 #==============================================================================#
 func _getDictFromFolder(path:String)->Dictionary:
 	var dir = DirAccess.open(path)

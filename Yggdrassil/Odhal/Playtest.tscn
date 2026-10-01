@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://c7p5yk8esy24h"]
+
+[ext_resource type="Script" uid="uid://c7s6h6o0agyqw" path="res://Yggdrassil/Odhal/Playtest.gd" id="1_41yjl"]
+
+[node name="Playtest" type="Node2D" unique_id=1513531109 node_paths=PackedStringArray("testingSpawn")]
+script = ExtResource("1_41yjl")
+testingSpawn = NodePath("TestingSpawn")
+
+[node name="TestingSpawn" type="Node2D" parent="." unique_id=1785840073]
+
+[node name="Camera" type="Camera2D" parent="." unique_id=141111574]
+zoom = Vector2(2, 2)

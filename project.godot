@@ -25,6 +25,7 @@ WorldData="*uid://b8s81vwjq7eph"
 
 window/size/viewport_width=800
 window/size/viewport_height=800
+window/size/resizable=false
 
 [file_customization]
 

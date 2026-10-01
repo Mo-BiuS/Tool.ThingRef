@@ -13,8 +13,9 @@ func setMeta(k:String)->void:
 func loadFromDict(dict:Dictionary)->bool:
 	if(DictFunc.stringAt(dict,"name")):name = dict["name"]
 	if(DictFunc.stringAt(dict,"description")):description = dict["description"]
-	atlasId = WorldData.textureHandler.getAtlasIdFromDict(dict)
-	spriteFramesId = WorldData.textureHandler.getSpriteFramesIdFromDict(dict)
+	
+	WorldData.atlasRequest(self,"atlasId",dict)
+	WorldData.spriteFrameRequest(self,"spriteFramesId",dict)
 	return true
 
 func clear()->void:
