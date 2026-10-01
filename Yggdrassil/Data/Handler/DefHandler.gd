@@ -63,7 +63,9 @@ func getDefCategories(script:GDScript)->Dictionary:
 #==============================================================================#
 func _getDictFromFolder(path:String)->Dictionary:
 	var dir = DirAccess.open(path)
-	if(dir == null):return {}
+	if(dir == null):
+		_putError("Dir not found : %s" % path)
+		return {}
 	
 	var rep:Dictionary = {}
 	
@@ -80,10 +82,11 @@ func _getDictFromFolder(path:String)->Dictionary:
 
 func _loadJsonFromPath(path:String)->Dictionary:
 	if !FileAccess.file_exists(path) :
-		push_error("File not found : "+path)
+		_putError("File not found : %s" % path)
+		return {}
 	var json := JSON.new()
 	if(json.parse(FileAccess.get_file_as_string(path)) != OK):
-		push_error("%s ligne %d : %s" % [path, json.get_error_line(), json.get_error_message()])
+		_putError("%s ligne %d : %s" % [path, json.get_error_line(), json.get_error_message()])
 	elif(json.data is Dictionary):
 		return json.data
 	return {}

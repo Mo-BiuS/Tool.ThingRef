@@ -1,12 +1,10 @@
 class_name DictFunc
 
-static var mergeLast:String
 static func mergeDict(d1:Dictionary,d2:Dictionary,mergeRule:MergeRule=MergeRule.new(),keyChain:String = "")->Array[String]:
 	var overrideReport:Array[String] = []
 	for key in d2:
 		if(d1.has(key)):
 			if(d1[key] is Dictionary && d2[key] is Dictionary):
-				mergeLast = key
 				overrideReport.append_array(mergeDict(d1[key],d2[key],mergeRule,keyChain+"."+key))
 			else:
 				if(arrayAt(d1,key) && arrayAt(d2,key)):
