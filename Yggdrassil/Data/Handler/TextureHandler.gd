@@ -13,14 +13,12 @@ var spriteFramesArray:Array[SpriteFrames] = []
 var spriteFramesMutex:=Mutex.new()
 
 var _loadingSemaphore:Semaphore
-var keepLoading:bool
 var loadingQueue:=DoubleLinkedList.new()
 
 func init()->void:
 	source = "TextureHandler"
 #==============================================================================#
 func startLoading()->void:
-	keepLoading = true
 	_loadingThread = Thread.new()
 	_loadingSemaphore = Semaphore.new()
 	_loadingThread.start(_loading)
@@ -33,7 +31,7 @@ func _loading()->void:
 		if(request is SpriteFramesRequest):_loadSpriteFrames(request)
 	call_deferred("_endLoading")
 func _endLoading()->void:
-	if _loadingThread != null and _loadingThread.is_started():
+	if _loadingThread != null && _loadingThread.is_started():
 		_loadingThread.wait_to_finish()
 	finishedLoading.emit()
 
@@ -180,6 +178,5 @@ func clear()->void:
 	
 	loadingQueue.clear()
 func exit()->void:
-	keepLoading = false
 	if _loadingThread != null && _loadingThread.is_started():
 		_loadingThread.wait_to_finish()

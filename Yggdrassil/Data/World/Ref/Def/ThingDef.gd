@@ -7,6 +7,7 @@ var atlasId:int = -1
 var spriteFramesId:int = -1
 
 func loadFromDict(dict:Dictionary)->bool:
+	if(!super.loadFromDict(dict)):return false
 	name = DictFunc.getStringAt(dict,"name")
 	description = DictFunc.getStringAt(dict,"description")
 	

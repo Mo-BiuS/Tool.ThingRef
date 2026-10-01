@@ -1,6 +1,6 @@
 @abstract class_name RessourceHandler extends RefCounted
 
-@warning_ignore("unused_signal") signal putMessage(Message)
+@warning_ignore("unused_signal") signal putMessage(m:Message)
 @warning_ignore("unused_signal") signal finishedLoading
 
 @warning_ignore("unused_private_class_variable")

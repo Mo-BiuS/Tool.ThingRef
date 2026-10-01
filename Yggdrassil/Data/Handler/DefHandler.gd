@@ -8,11 +8,12 @@ var defKeys:Dictionary[GDScript,String] = {
 var defLoadOrder:Array[GDScript] = [
 	ThingDef
 ]
-
+var mergeRule:=DictFunc.MergeRule.new()
 var root:Dictionary[GDScript,Dictionary]
 
 func init()->void:
 	source = "DefHandler"
+	mergeRule.rule["Sources"] = DictFunc.MERGE_TYPE.APPEND
 #==============================================================================#
 func startLoading()->void:
 	_loadingThread = Thread.new()
@@ -21,7 +22,7 @@ func _loading()->void:
 	_loadDefFromDict(_loadAllDict())
 	call_deferred("_endLoading")
 func _endLoading()->void:
-	if _loadingThread != null and _loadingThread.is_started():
+	if _loadingThread != null && _loadingThread.is_started():
 		_loadingThread.wait_to_finish()
 	finishedLoading.emit()
 
@@ -32,14 +33,13 @@ func _loadAllDict()->Dictionary:
 	for path:String in loadArray:
 		var sourceName:=path.trim_suffix("/").get_file()
 		var sourceDict:=_getDictFromFolder(path)
-		var report:Array[String] = DictFunc.mergeDict(rep,sourceDict)
+		appendSource(sourceDict,sourceName)
+		var report:Array[String] = DictFunc.mergeDict(rep,sourceDict,mergeRule,sourceName)
 		for m:String in report:
-			_putMessage("%s -> %s" % [sourceName,m])
+			_putMessage("DEF EDITED -> %s" % m)
 	return rep
 
 func _loadDefFromDict(allDict:Dictionary)->void:
-	if(allDict.is_empty()):return
-	
 	for script in defLoadOrder:
 		if(defKeys.has(script)):
 			var scriptName := defKeys[script]
@@ -53,7 +53,8 @@ func _loadDefFromDict(allDict:Dictionary)->void:
 						root[script][key] = thing
 			allDict.erase(scriptName)
 	
-	if(!allDict.is_empty()):return
+	if(!allDict.is_empty()):
+		_putWarning("Def dict not empty %s" % allDict)
 
 #==============================================================================#
 func getDefCategories(script:GDScript)->Dictionary:
@@ -87,6 +88,11 @@ func _loadJsonFromPath(path:String)->Dictionary:
 		return json.data
 	return {}
 #==============================================================================#
+func appendSource(dict:Dictionary,name:String)->void:
+	for script in defLoadOrder:
+		for def in DictFunc.getDictAt(dict,defKeys[script]).values():
+			if(DictFunc.arrayAt(def,"Sources")):def["Sources"].append(name)
+			else:def["Sources"] = [name]
 func clear()->void:
 	root.clear()
 func exit()->void:

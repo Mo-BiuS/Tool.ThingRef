@@ -1,20 +1,34 @@
 class_name DictFunc
 
 static var mergeLast:String
-static func mergeDict(d1:Dictionary,d2:Dictionary)->Array[String]:
+static func mergeDict(d1:Dictionary,d2:Dictionary,mergeRule:MergeRule=MergeRule.new(),keyChain:String = "")->Array[String]:
 	var overrideReport:Array[String] = []
 	for key in d2:
 		if(d1.has(key)):
 			if(d1[key] is Dictionary && d2[key] is Dictionary):
 				mergeLast = key
-				overrideReport.append_array(mergeDict(d1[key],d2[key]))
+				overrideReport.append_array(mergeDict(d1[key],d2[key],mergeRule,keyChain+"."+key))
 			else:
-				d1[key] = d2[key]
-				overrideReport.append("[Thing : %s -> Property : %s -> New Value : %s]" % [mergeLast,key,d2[key]])
+				if(arrayAt(d1,key) && arrayAt(d2,key)):
+					var rule:=mergeRule.default
+					if(mergeRule.rule.has(key)):rule = mergeRule.rule[key]
+					match rule:
+						MERGE_TYPE.REPLACE:d1[key] = d2[key]
+						MERGE_TYPE.APPEND:d1[key].append_array(d2[key])
+				else:
+					d1[key] = d2[key]
+				overrideReport.append("[At : %s -> Property : %s -> New Value : %s]" % [keyChain,key,d2[key]])
 		else:
 			d1[key] = d2[key]
 	return overrideReport
-
+#==================================================================================================#
+class MergeRule:
+	var default:=MERGE_TYPE.REPLACE
+	var rule:Dictionary[String,MERGE_TYPE]
+enum MERGE_TYPE{
+	REPLACE,
+	APPEND
+}
 #==================================================================================================#
 static func intAt(dict:Dictionary,key:String)->bool:
 	return dict.has(key) && _isInt(dict[key])
@@ -50,6 +64,19 @@ static func arrayAt(dict:Dictionary,key:String)->bool:
 static func getArrayAt(dict:Dictionary,key:String,default:=[])->Array:
 	if(!arrayAt(dict,key)):return default
 	return dict[key]
+
+static func stringArrayAt(dict:Dictionary,key:String)->bool:
+	if(!arrayAt(dict,key)):return false
+	var array = getArrayAt(dict,key)
+	for value  in array:
+		if !value is String : return false
+	return true
+static func getStringArrayAt(dict:Dictionary,key:String,default:=[])->Array[String]:
+	if(!stringArrayAt(dict,key)):return default
+	var rep:Array[String] = []
+	var array = getArrayAt(dict,key)
+	for v in array:rep.append(v)
+	return rep
 #==================================================================================================#
 static func rect2iAt(dict:Dictionary,key:String)->bool:
 	if(!dict.has(key) || !(dict[key] is Array)):return false
