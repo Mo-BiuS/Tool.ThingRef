@@ -10,8 +10,8 @@ static func createRequest(dest:ThingDef,prop:String,dict:Dictionary)->AtlasReque
 	var rep:=AtlasRequest.new()
 	rep.destination = dest
 	rep.property = prop
-	rep.texturePath = dict["path"]
-	rep.rect = DictFunc.getRect2i(dict,"rect")
+	rep.texturePath = DictFunc.getStringAt(dict,"path")
+	rep.rect = DictFunc.getRect2iAt(dict,"rect")
 	rep._genKey()
 	return rep
 

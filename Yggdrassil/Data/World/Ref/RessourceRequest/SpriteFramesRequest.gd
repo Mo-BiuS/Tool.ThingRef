@@ -16,8 +16,8 @@ static func createRequest(dest:ThingDef,prop:String,dict:Dictionary)->SpriteFram
 	var rep:=SpriteFramesRequest.new()
 	rep.destination = dest
 	rep.property = prop
-	rep.texturePath = dict["path"]
-	rep.frameSize = DictFunc.getVector2i(dict,"frameSize")
+	rep.texturePath = DictFunc.getStringAt(dict,"path")
+	rep.frameSize = DictFunc.getVector2iAt(dict,"frameSize")
 	var subDict:Dictionary=dict["animations"]
 	for animKey:String in subDict.keys():
 		rep.animDict[animKey] = ArrayFunc.getVector2iArrayAt(subDict[animKey])

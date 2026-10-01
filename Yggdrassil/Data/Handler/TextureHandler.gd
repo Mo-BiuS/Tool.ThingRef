@@ -1,4 +1,4 @@
-class_name TextureHandler extends RefCounted
+class_name TextureHandler extends RessourceHandler
 
 var textureDict:Dictionary[String,Texture2D] = {}
 var textureDictMutex:=Mutex.new()
@@ -12,18 +12,23 @@ var atlasMutex:=Mutex.new()
 var spriteFramesArray:Array[SpriteFrames] = []
 var spriteFramesMutex:=Mutex.new()
 
-var _loadingThread:Thread
+var _loadingSemaphore:Semaphore
 var keepLoading:bool
-var workList:=DoubleLinkedList.new()
-signal finishedLoading
+var loadingQueue:=DoubleLinkedList.new()
+
+func init()->void:
+	source = "TextureHandler"
 #==============================================================================#
 func startLoading()->void:
 	keepLoading = true
 	_loadingThread = Thread.new()
+	_loadingSemaphore = Semaphore.new()
 	_loadingThread.start(_loading)
 func _loading()->void:
-	while keepLoading || !workList.isEmpty():
-		var request:TextureRequest = workList.popFront()
+	while true:
+		_loadingSemaphore.wait()
+		var request:RessourceRequest = loadingQueue.popFront()
+		if(request is StopRequest):break
 		if(request is AtlasRequest):_loadAtlas(request)
 		if(request is SpriteFramesRequest):_loadSpriteFrames(request)
 	call_deferred("_endLoading")
@@ -34,20 +39,32 @@ func _endLoading()->void:
 
 #==============================================================================#
 func _getTexture(path:String)->Texture2D:
-	var rep:Texture2D = null
-	textureDictMutex.lock()
-	
-	if(textureDict.has(path)):rep = textureDict[path]
-	elif(FileAccess.file_exists(path)):
+	if(textureDict.has(path)):
+		textureDictMutex.lock()
+		var rep:= textureDict[path]
 		textureDictMutex.unlock()
-		var image:=Image.load_from_file(path)
-		if(image != null && image is Image):
-			rep = ImageTexture.create_from_image(image)
-			textureDictMutex.lock()
-			textureDict[path] = rep
+		return rep
 	
-	textureDictMutex.unlock()
-	return rep
+	if(!FileAccess.file_exists(path)):
+		_putError("File not found at %s" % path)
+		return null
+	
+	var image:=Image.load_from_file(path)
+	
+	if(image == null):
+		_putError("File couldn't be loaded %s" % path)
+		return null
+	
+	if(!image is Image):
+		_putError("File isn't an image %s" % path)
+		return null
+	else:
+		var rep:= ImageTexture.create_from_image(image)
+		textureDictMutex.lock()
+		textureDict[path] = rep
+		textureDictMutex.unlock()
+		return rep
+
 func _getIdFromKey(key:String)->int:
 	keyToIdMutex.lock()
 	if(keyToId.has(key)):
@@ -57,13 +74,20 @@ func _getIdFromKey(key:String)->int:
 	keyToIdMutex.unlock()
 	return -1
 #==============================================================================#
-func newAtlasRequest(dest:ThingDef,prop:String,dict:Dictionary)->int:
-	if(!(prop in dest)):return -1
-	if(!DictFunc.dictAt(dict,"atlasData")):return -1
-	if(!AtlasRequest.isValidData(dict["atlasData"])):return -1
+func newAtlasRequest(dest:Def,prop:String,dict:Dictionary)->int:
+	if(!(prop in dest)):
+		_putError("No propriety name %s in %s" % [prop,dest.name])
+		return -1
+	if(!DictFunc.dictAt(dict,"atlasData")):
+		_putError("No atlasData detected for %s in %s" % [prop,dest.name])
+		return -1
+	if(!AtlasRequest.isValidData(dict["atlasData"])):
+		_putError("AtlasData not valid for %s in %s" % [prop,dest.name])
+		return -1
 	
 	var request:=AtlasRequest.createRequest(dest,prop,dict["atlasData"])
-	workList.pushBack(request)
+	loadingQueue.pushBack(request)
+	_loadingSemaphore.post()
 	return 0
 func _loadAtlas(request:AtlasRequest)->int:
 	var id:=_getIdFromKey(request.key)
@@ -93,13 +117,20 @@ func getAtlasFromId(id:int)->AtlasTexture:
 	return rep
 
 #==============================================================================#
-func newSpriteFrameRequest(dest:ThingDef,prop:String,dict:Dictionary)->int:
-	if(!(prop in dest)):return -1
-	if(!DictFunc.dictAt(dict,"spriteFramesData")):return -1
-	if(!SpriteFramesRequest.isValidData(dict["spriteFramesData"])):return -1
+func newSpriteFrameRequest(dest:Def,prop:String,dict:Dictionary)->int:
+	if(!(prop in dest)):
+		_putError("No propriety name %s in %s" % [prop,dest.name])
+		return -1
+	if(!DictFunc.dictAt(dict,"spriteFramesData")):
+		_putError("No spriteFramesData detected for %s in %s" % [prop,dest.name])
+		return -1
+	if(!SpriteFramesRequest.isValidData(dict["spriteFramesData"])):
+		_putError("spriteFramesData not valid for %s in %s" % [prop,dest.name])
+		return -1
 	
 	var request:=SpriteFramesRequest.createRequest(dest,prop,dict["spriteFramesData"])
-	workList.pushBack(request)
+	loadingQueue.pushBack(request)
+	_loadingSemaphore.post()
 	return 0
 func _loadSpriteFrames(request:SpriteFramesRequest)->int:
 	var id:=_getIdFromKey(request.key)
@@ -127,6 +158,9 @@ func getSpriteFramesFromId(id:int)->SpriteFrames:
 	spriteFramesMutex.unlock()
 	return rep
 #==============================================================================#
+func putStopRequest()->void:
+	loadingQueue.pushBack(StopRequest.new())
+	_loadingSemaphore.post()
 func clear()->void:
 	keyToIdMutex.lock()
 	keyToId.clear()
@@ -144,4 +178,8 @@ func clear()->void:
 	spriteFramesArray.clear()
 	spriteFramesMutex.unlock()
 	
-	workList.clear()
+	loadingQueue.clear()
+func exit()->void:
+	keepLoading = false
+	if _loadingThread != null && _loadingThread.is_started():
+		_loadingThread.wait_to_finish()

@@ -1,6 +1,4 @@
-class_name ThingDef extends RefCounted
-
-var key:String = ""
+class_name ThingDef extends Def
 
 var name:String = ""
 var description:String = ""
@@ -8,11 +6,9 @@ var description:String = ""
 var atlasId:int = -1
 var spriteFramesId:int = -1
 
-func setMeta(k:String)->void:
-	key = k
 func loadFromDict(dict:Dictionary)->bool:
-	if(DictFunc.stringAt(dict,"name")):name = dict["name"]
-	if(DictFunc.stringAt(dict,"description")):description = dict["description"]
+	name = DictFunc.getStringAt(dict,"name")
+	description = DictFunc.getStringAt(dict,"description")
 	
 	WorldData.atlasRequest(self,"atlasId",dict)
 	WorldData.spriteFrameRequest(self,"spriteFramesId",dict)

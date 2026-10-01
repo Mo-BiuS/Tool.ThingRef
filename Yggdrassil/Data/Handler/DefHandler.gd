@@ -1,4 +1,4 @@
-class_name DefHandler extends RefCounted
+class_name DefHandler extends RessourceHandler
 
 const LOAD_LIST:="res://LoadList.json"
 
@@ -9,31 +9,32 @@ var defLoadOrder:Array[GDScript] = [
 	ThingDef
 ]
 
-var _loadingThread:Thread
-
 var root:Dictionary[GDScript,Dictionary]
 
-signal finishedLoading
-
+func init()->void:
+	source = "DefHandler"
 #==============================================================================#
 func startLoading()->void:
 	_loadingThread = Thread.new()
 	_loadingThread.start(_loading)
+func _loading()->void:
+	_loadDefFromDict(_loadAllDict())
+	call_deferred("_endLoading")
 func _endLoading()->void:
 	if _loadingThread != null and _loadingThread.is_started():
 		_loadingThread.wait_to_finish()
 	finishedLoading.emit()
-func _loading()->void:
-	_loadDefFromDict(_loadAllDict())
-	call_deferred("_endLoading")
 
 func _loadAllDict()->Dictionary:
 	var rep := {}
 	var loadDict:=_loadJsonFromPath(LOAD_LIST)
-	if(DictFunc.arrayAt(loadDict,"LoadList")):
-		var loadArray:Array = loadDict["LoadList"]
-		for path in loadArray:
-			DictFunc.mergeDict(rep,_getDictFromFolder(path))
+	var loadArray:Array = DictFunc.getArrayAt(loadDict,"LoadList")
+	for path:String in loadArray:
+		var sourceName:=path.trim_suffix("/").get_file()
+		var sourceDict:=_getDictFromFolder(path)
+		var report:Array[String] = DictFunc.mergeDict(rep,sourceDict)
+		for m:String in report:
+			_putMessage("%s -> %s" % [sourceName,m])
 	return rep
 
 func _loadDefFromDict(allDict:Dictionary)->void:
@@ -42,15 +43,15 @@ func _loadDefFromDict(allDict:Dictionary)->void:
 	for script in defLoadOrder:
 		if(defKeys.has(script)):
 			var scriptName := defKeys[script]
-			if(DictFunc.dictAt(allDict,scriptName)):
-				root[script] = {}
-				var scriptDict:Dictionary = allDict[scriptName]
-				for key in scriptDict.keys():
-					var thing=script.new()
+			root[script] = {}
+			var scriptDict:Dictionary = DictFunc.getDictAt(allDict,scriptName)
+			for key in scriptDict.keys():
+				if(DictFunc.dictAt(scriptDict,key)):
+					var thing:Def=script.new()
 					if(thing.loadFromDict(scriptDict[key])):
 						thing.setMeta(key)
 						root[script][key] = thing
-				allDict.erase(scriptName)
+			allDict.erase(scriptName)
 	
 	if(!allDict.is_empty()):return
 
@@ -88,6 +89,6 @@ func _loadJsonFromPath(path:String)->Dictionary:
 #==============================================================================#
 func clear()->void:
 	root.clear()
-func _exit_tree() -> void:
-	if _loadingThread != null and _loadingThread.is_started():
+func exit()->void:
+	if _loadingThread != null && _loadingThread.is_started():
 		_loadingThread.wait_to_finish()

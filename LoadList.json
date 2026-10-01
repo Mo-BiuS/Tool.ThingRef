@@ -1,6 +1,7 @@
 {
 	"LoadList":[
 		"res://Data/Core/",
-		"res://Mods/PlayerModTest/"
+		"res://Mods/PlayerModTest/",
+		"res://Mods/ReplacementModTest/"
 	]
 }

@@ -1,6 +1,6 @@
 @abstract class_name RessourceRequest extends RefCounted
 
-var destination:ThingDef
+var destination:Def
 var property:String
 var key:String
 
