@@ -1,10 +1,10 @@
 {
-	"ThingDef":{
+	"PlayerDef":{
 		"Player":{
 			"name":"Player",
 			"description":"huwawawawa",
 			"spriteFramesData":{
-				"path":"res://Mods/PlayerModTest/Shade.png",
+				"path":"Shade.png",
 				"frameSize":[32,48],
 				"animations":{
 					"north":[[0,2],[1,2],[2,2],[3,2]],

@@ -3,10 +3,12 @@ class_name DefHandler extends RessourceHandler
 const LOAD_LIST:="res://LoadList.json"
 
 var defKeys:Dictionary[GDScript,String] = {
-	ThingDef:"ThingDef"
+	ItemDef:"ItemDef",
+	PlayerDef:"PlayerDef"
 }
 var defLoadOrder:Array[GDScript] = [
-	ThingDef
+	ItemDef,
+	PlayerDef,
 ]
 var mergeRule:=DictFunc.MergeRule.new()
 var root:Dictionary[GDScript,Dictionary]
@@ -34,6 +36,7 @@ func _loadAllDict()->Dictionary:
 		var sourceName:=path.trim_suffix("/").get_file()
 		var sourceDict:=_getDictFromFolder(path)
 		appendSource(sourceDict,sourceName)
+		appendPath(sourceDict,path)
 		var report:Array[String] = DictFunc.mergeDict(rep,sourceDict,mergeRule,sourceName)
 		for m:String in report:
 			_putMessage("DEF EDITED -> %s" % m)
@@ -96,6 +99,11 @@ func appendSource(dict:Dictionary,name:String)->void:
 		for def in DictFunc.getDictAt(dict,defKeys[script]).values():
 			if(DictFunc.arrayAt(def,"Sources")):def["Sources"].append(name)
 			else:def["Sources"] = [name]
+func appendPath(dict:Dictionary,path:String)->void:
+	if(DictFunc.stringAt(dict,"path")):dict["path"] = path.path_join(dict["path"])
+	else:
+		for key in dict.keys():
+			if(DictFunc.dictAt(dict,key)):appendPath(dict[key],path)
 func clear()->void:
 	root.clear()
 func exit()->void:

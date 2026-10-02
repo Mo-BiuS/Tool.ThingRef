@@ -1,5 +1,5 @@
 {
-	"ThingDef":{
+	"ItemDef":{
 		"MinorRedPotion":{
 			"description":"TEST_0",
 		},
