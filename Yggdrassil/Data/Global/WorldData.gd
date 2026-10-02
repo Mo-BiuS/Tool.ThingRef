@@ -57,10 +57,6 @@ func getAudioFromId(id:int)->AudioStream:
 #Normalement il devrais émètre vers une interface
 func _putMessage(message:RessourceHandler.Message)->void:
 	print(message)
-func _putWarning(warning:RessourceHandler.Message)->void:
-	print(warning)
-func _putError(error:RessourceHandler.Message)->void:
-	print(error)
 #==============================================================================#
 func _exit_tree() -> void:
 	for r:RessourceHandler in _ressourceHandlerArray:r.exit()

@@ -2,7 +2,7 @@
 	"AudioDef":{
 		"bgmMusic":{
 			"audioData":{
-				"path":"zelda.mp3"
+				"path":"zelda.ogg"
 			}
 		}
 	}

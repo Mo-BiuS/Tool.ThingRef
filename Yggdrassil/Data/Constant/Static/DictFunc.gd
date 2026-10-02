@@ -15,7 +15,7 @@ static func mergeDict(d1:Dictionary,d2:Dictionary,mergeRule:MergeRule=MergeRule.
 						MERGE_TYPE.APPEND:d1[key].append_array(d2[key])
 				else:
 					d1[key] = d2[key]
-				overrideReport.append("[At : %s -> Property : %s -> New Value : %s]" % [keyChain,key,d2[key]])
+				overrideReport.append("[At : %s.%s -> New : %s]" % [keyChain,key,d2[key]])
 		else:
 			d1[key] = d2[key]
 	return overrideReport

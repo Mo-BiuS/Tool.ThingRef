@@ -9,3 +9,5 @@ func loadFromDict(dict:Dictionary)->bool:
 	sources = DictFunc.getStringArrayAt(dict,"Sources")
 	return true
 @abstract func clear()->void
+func _to_string() -> String:
+	return key

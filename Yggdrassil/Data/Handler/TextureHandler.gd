@@ -1,19 +1,16 @@
 class_name TextureHandler extends RessourceHandler
 
 var textureDict:Dictionary[String,Texture2D] = {}
-var textureDictMutex:=Mutex.new()
 
 var keyToId:Dictionary[String,int] = {}
-var keyToIdMutex:=Mutex.new()
 
 var atlasArray:Array[AtlasTexture] = []
-var atlasMutex:=Mutex.new()
 
 var spriteFramesArray:Array[SpriteFrames] = []
-var spriteFramesMutex:=Mutex.new()
 
 var _loadingSemaphore:Semaphore
 var loadingQueue:=DoubleLinkedList.new()
+var loadingMutex:=Mutex.new()
 
 func init()->void:
 	source = "TextureHandler"
@@ -41,11 +38,12 @@ func putStopRequest()->void:
 
 #==============================================================================#
 func _getTexture(path:String)->Texture2D:
+	loadingMutex.lock()
 	if(textureDict.has(path)):
-		textureDictMutex.lock()
 		var rep:= textureDict[path]
-		textureDictMutex.unlock()
+		loadingMutex.unlock()
 		return rep
+	loadingMutex.unlock()
 	
 	if(!FileAccess.file_exists(path)):
 		_putError("File not found at %s" % path)
@@ -56,24 +54,20 @@ func _getTexture(path:String)->Texture2D:
 	if(image == null):
 		_putError("File couldn't be loaded %s" % path)
 		return null
-	
-	if(!image is Image):
-		_putError("File isn't an image %s" % path)
-		return null
 	else:
 		var rep:= ImageTexture.create_from_image(image)
-		textureDictMutex.lock()
+		loadingMutex.lock()
 		textureDict[path] = rep
-		textureDictMutex.unlock()
+		loadingMutex.unlock()
 		return rep
 
 func _getIdFromKey(key:String)->int:
-	keyToIdMutex.lock()
+	loadingMutex.lock()
 	if(keyToId.has(key)):
 		var id := keyToId[key]
-		keyToIdMutex.unlock()
+		loadingMutex.unlock()
 		return id
-	keyToIdMutex.unlock()
+	loadingMutex.unlock()
 	return -1
 #==============================================================================#
 func newAtlasRequest(dest:Def,prop:String,dict:Dictionary)->int:
@@ -100,23 +94,21 @@ func _loadAtlas(request:AtlasRequest)->int:
 		
 		var newAtlas:=request.genAtlas(texture)
 		
-		keyToIdMutex.lock()
-		atlasMutex.lock()
+		loadingMutex.lock()
 		
 		id = atlasArray.size()
 		atlasArray.append(newAtlas)
 		keyToId[request.key] = id
 		
-		keyToIdMutex.unlock()
-		atlasMutex.unlock()
+		loadingMutex.unlock()
 	
 	request.destination.set_deferred(request.property, id)
 	return id
 func getAtlasFromId(id:int)->AtlasTexture:
 	var rep:AtlasTexture = null
-	atlasMutex.lock()
+	loadingMutex.lock()
 	if(id >= 0 && id < atlasArray.size()):rep = atlasArray[id]
-	atlasMutex.unlock()
+	loadingMutex.unlock()
 	return rep
 
 #==============================================================================#
@@ -144,41 +136,33 @@ func _loadSpriteFrames(request:SpriteFramesRequest)->int:
 		
 		var newSpriteFrames := request.genSpriteFrames(texture)
 		
-		spriteFramesMutex.lock()
-		keyToIdMutex.lock()
+		loadingMutex.lock()
 		
 		id = spriteFramesArray.size()
 		spriteFramesArray.append(newSpriteFrames)
 		keyToId[request.key] = id
 		
-		spriteFramesMutex.unlock()
-		keyToIdMutex.unlock()
+		loadingMutex.unlock()
 	request.destination.set_deferred(request.property, id)
 	return id
 func getSpriteFramesFromId(id:int)->SpriteFrames:
 	var rep:SpriteFrames = null
-	spriteFramesMutex.lock()
+	loadingMutex.lock()
 	if(id >= 0 && id < spriteFramesArray.size()):rep = spriteFramesArray[id]
-	spriteFramesMutex.unlock()
+	loadingMutex.unlock()
 	return rep
 #==============================================================================#
 func clear()->void:
-	keyToIdMutex.lock()
-	atlasMutex.lock()
-	textureDictMutex.lock()
-	spriteFramesMutex.lock()
+	loadingMutex.lock()
 	
 	keyToId.clear()
 	atlasArray.clear()
 	textureDict.clear()
 	spriteFramesArray.clear()
-	
-	keyToIdMutex.unlock()
-	atlasMutex.unlock()
-	textureDictMutex.unlock()
-	spriteFramesMutex.unlock()
-	
 	loadingQueue.clear()
+	
+	loadingMutex.unlock()
+
 func exit()->void:
 	if _loadingThread != null && _loadingThread.is_started():
 		_loadingThread.wait_to_finish()

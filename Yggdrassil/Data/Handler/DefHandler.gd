@@ -2,11 +2,6 @@ class_name DefHandler extends RessourceHandler
 
 const LOAD_LIST:="res://LoadList.json"
 
-var defKeys:Dictionary[GDScript,String] = {
-	ItemDef:"ItemDef",
-	PlayerDef:"PlayerDef",
-	AudioDef:"AudioDef"
-}
 var defLoadOrder:Array[GDScript] = [
 	ItemDef,
 	PlayerDef,
@@ -46,25 +41,32 @@ func _loadAllDict()->Dictionary:
 
 func _loadDefFromDict(allDict:Dictionary)->void:
 	for script in defLoadOrder:
-		if(defKeys.has(script)):
-			var scriptName := defKeys[script]
-			root[script] = {}
-			var scriptDict:Dictionary = DictFunc.getDictAt(allDict,scriptName)
-			for key in scriptDict.keys():
-				if(DictFunc.dictAt(scriptDict,key)):
-					var thing:Def=script.new()
-					thing.setMeta(key)
-					if(thing.loadFromDict(scriptDict[key])):
-						root[script][key] = thing
-			allDict.erase(scriptName)
+		var scriptName := script.get_global_name()
+		root[script] = {}
+		var scriptDict:Dictionary = DictFunc.getDictAt(allDict,scriptName)
+		for key in scriptDict.keys():
+			if(DictFunc.dictAt(scriptDict,key)):
+				var thing:Def=script.new()
+				thing.setMeta(key)
+				if(thing.loadFromDict(scriptDict[key])):
+					root[script][key] = thing
+		allDict.erase(scriptName)
 	
 	if(!allDict.is_empty()):
 		_putWarning("Def dict not empty %s" % allDict)
 
 #==============================================================================#
 func getDefCategories(script:GDScript)->Dictionary:
-	if(root.has(script)):return root[script]
-	else:return {}
+	var rep:Dictionary = {}
+	for key in root:
+		var current:GDScript = key
+
+		while current != null:
+			if current == script:
+				DictFunc.mergeDict(rep,root[key])
+			current = current.get_base_script()
+	
+	return rep
 #==============================================================================#
 func _getDictFromFolder(path:String)->Dictionary:
 	var dir = DirAccess.open(path)
@@ -98,9 +100,10 @@ func _loadJsonFromPath(path:String)->Dictionary:
 #==============================================================================#
 func appendSource(dict:Dictionary,name:String)->void:
 	for script in defLoadOrder:
-		for def in DictFunc.getDictAt(dict,defKeys[script]).values():
-			if(DictFunc.arrayAt(def,"Sources")):def["Sources"].append(name)
-			else:def["Sources"] = [name]
+		for def in DictFunc.getDictAt(dict,script.get_global_name()).values():
+			if(def is Dictionary):
+				if(DictFunc.arrayAt(def,"Sources")):def["Sources"].append(name)
+				else:def["Sources"] = [name]
 func appendPath(dict:Dictionary,path:String)->void:
 	if(DictFunc.stringAt(dict,"path")):dict["path"] = path.path_join(dict["path"])
 	else:

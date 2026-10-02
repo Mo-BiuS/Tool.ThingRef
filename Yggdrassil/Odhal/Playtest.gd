@@ -25,6 +25,7 @@ func startTest()->void:
 			s.autoplay = true
 			s.position = Vector2i(randi()%360-180,randi()%360-180)
 			testingSpawn.add_child(s)
+	print(WorldData.getDefCategories(Def).values())
 
 func clear()->void:
 	for i in testingSpawn.get_children():i.queue_free()

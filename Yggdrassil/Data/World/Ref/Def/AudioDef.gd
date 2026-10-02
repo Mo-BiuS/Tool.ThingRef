@@ -1,6 +1,6 @@
 class_name AudioDef extends Def
 
-var audioId:int
+var audioId:int = -1
 
 func loadFromDict(dict:Dictionary)->bool:
 	if(!super.loadFromDict(dict)):return false
