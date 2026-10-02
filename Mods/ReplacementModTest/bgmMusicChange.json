@@ -1,0 +1,9 @@
+{
+	"AudioDef":{
+		"bgmMusic":{
+			"audioData":{
+				"path":"wind waker.mp3"
+			}
+		}
+	}
+}

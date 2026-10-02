@@ -18,6 +18,13 @@ func startTest()->void:
 			s.texture = WorldData.getAtlasFromId(t.atlasId)
 			s.position = Vector2i(randi()%360-180,randi()%360-180)
 			testingSpawn.add_child(s)
+	for t:AudioDef in WorldData.getDefCategories(AudioDef).values():
+		if(t.audioId != -1):
+			var s:=AudioStreamPlayer2D.new()
+			s.stream = WorldData.getAudioFromId(t.audioId)
+			s.autoplay = true
+			s.position = Vector2i(randi()%360-180,randi()%360-180)
+			testingSpawn.add_child(s)
 
 func clear()->void:
 	for i in testingSpawn.get_children():i.queue_free()

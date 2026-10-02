@@ -1,0 +1,9 @@
+{
+	"AudioDef":{
+		"bgmMusic":{
+			"audioData":{
+				"path":"Music/Jester's Playground.mp3"
+			}
+		}
+	}
+}

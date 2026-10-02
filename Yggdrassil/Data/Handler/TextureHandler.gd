@@ -19,6 +19,7 @@ func init()->void:
 	source = "TextureHandler"
 #==============================================================================#
 func startLoading()->void:
+	loadingQueue.clear()
 	_loadingThread = Thread.new()
 	_loadingSemaphore = Semaphore.new()
 	_loadingThread.start(_loading)
@@ -34,6 +35,9 @@ func _endLoading()->void:
 	if _loadingThread != null && _loadingThread.is_started():
 		_loadingThread.wait_to_finish()
 	finishedLoading.emit()
+func putStopRequest()->void:
+	loadingQueue.pushBack(StopRequest.new())
+	_loadingSemaphore.post()
 
 #==============================================================================#
 func _getTexture(path:String)->Texture2D:
@@ -74,13 +78,13 @@ func _getIdFromKey(key:String)->int:
 #==============================================================================#
 func newAtlasRequest(dest:Def,prop:String,dict:Dictionary)->int:
 	if(!(prop in dest)):
-		_putError("No propriety name %s in %s" % [prop,dest.name])
+		_putError("No propriety name %s in %s" % [prop,dest.key])
 		return -1
 	if(!DictFunc.dictAt(dict,"atlasData")):
-		_putError("No atlasData detected for %s in %s" % [prop,dest.name])
+		_putError("No atlasData detected for %s in %s" % [prop,dest.key])
 		return -1
 	if(!AtlasRequest.isValidData(dict["atlasData"])):
-		_putError("AtlasData not valid for %s in %s" % [prop,dest.name])
+		_putError("AtlasData not valid for %s in %s" % [prop,dest.key])
 		return -1
 	
 	var request:=AtlasRequest.createRequest(dest,prop,dict["atlasData"])
@@ -96,14 +100,15 @@ func _loadAtlas(request:AtlasRequest)->int:
 		
 		var newAtlas:=request.genAtlas(texture)
 		
+		keyToIdMutex.lock()
 		atlasMutex.lock()
+		
 		id = atlasArray.size()
 		atlasArray.append(newAtlas)
-		atlasMutex.unlock()
-		
-		keyToIdMutex.lock()
 		keyToId[request.key] = id
+		
 		keyToIdMutex.unlock()
+		atlasMutex.unlock()
 	
 	request.destination.set_deferred(request.property, id)
 	return id
@@ -117,13 +122,13 @@ func getAtlasFromId(id:int)->AtlasTexture:
 #==============================================================================#
 func newSpriteFrameRequest(dest:Def,prop:String,dict:Dictionary)->int:
 	if(!(prop in dest)):
-		_putError("No propriety name %s in %s" % [prop,dest.name])
+		_putError("No propriety name %s in %s" % [prop,dest.key])
 		return -1
 	if(!DictFunc.dictAt(dict,"spriteFramesData")):
-		_putError("No spriteFramesData detected for %s in %s" % [prop,dest.name])
+		_putError("No spriteFramesData detected for %s in %s" % [prop,dest.key])
 		return -1
 	if(!SpriteFramesRequest.isValidData(dict["spriteFramesData"])):
-		_putError("spriteFramesData not valid for %s in %s" % [prop,dest.name])
+		_putError("spriteFramesData not valid for %s in %s" % [prop,dest.key])
 		return -1
 	
 	var request:=SpriteFramesRequest.createRequest(dest,prop,dict["spriteFramesData"])
@@ -140,12 +145,13 @@ func _loadSpriteFrames(request:SpriteFramesRequest)->int:
 		var newSpriteFrames := request.genSpriteFrames(texture)
 		
 		spriteFramesMutex.lock()
+		keyToIdMutex.lock()
+		
 		id = spriteFramesArray.size()
 		spriteFramesArray.append(newSpriteFrames)
-		spriteFramesMutex.unlock()
-		
-		keyToIdMutex.lock()
 		keyToId[request.key] = id
+		
+		spriteFramesMutex.unlock()
 		keyToIdMutex.unlock()
 	request.destination.set_deferred(request.property, id)
 	return id
@@ -156,24 +162,20 @@ func getSpriteFramesFromId(id:int)->SpriteFrames:
 	spriteFramesMutex.unlock()
 	return rep
 #==============================================================================#
-func putStopRequest()->void:
-	loadingQueue.pushBack(StopRequest.new())
-	_loadingSemaphore.post()
 func clear()->void:
 	keyToIdMutex.lock()
-	keyToId.clear()
-	keyToIdMutex.unlock()
-	
 	atlasMutex.lock()
-	atlasArray.clear()
-	atlasMutex.unlock()
-	
 	textureDictMutex.lock()
-	textureDict.clear()
-	textureDictMutex.unlock()
-	
 	spriteFramesMutex.lock()
+	
+	keyToId.clear()
+	atlasArray.clear()
+	textureDict.clear()
 	spriteFramesArray.clear()
+	
+	keyToIdMutex.unlock()
+	atlasMutex.unlock()
+	textureDictMutex.unlock()
 	spriteFramesMutex.unlock()
 	
 	loadingQueue.clear()

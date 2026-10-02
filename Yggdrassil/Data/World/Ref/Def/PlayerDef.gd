@@ -6,3 +6,5 @@ func loadFromDict(dict:Dictionary)->bool:
 	if(!super.loadFromDict(dict)):return false
 	WorldData.spriteFrameRequest(self,"spriteFramesId",dict)
 	return true
+func clear()->void:
+	super.clear()

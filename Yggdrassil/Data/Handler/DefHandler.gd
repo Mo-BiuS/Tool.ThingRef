@@ -4,11 +4,13 @@ const LOAD_LIST:="res://LoadList.json"
 
 var defKeys:Dictionary[GDScript,String] = {
 	ItemDef:"ItemDef",
-	PlayerDef:"PlayerDef"
+	PlayerDef:"PlayerDef",
+	AudioDef:"AudioDef"
 }
 var defLoadOrder:Array[GDScript] = [
 	ItemDef,
 	PlayerDef,
+	AudioDef
 ]
 var mergeRule:=DictFunc.MergeRule.new()
 var root:Dictionary[GDScript,Dictionary]
@@ -51,8 +53,8 @@ func _loadDefFromDict(allDict:Dictionary)->void:
 			for key in scriptDict.keys():
 				if(DictFunc.dictAt(scriptDict,key)):
 					var thing:Def=script.new()
+					thing.setMeta(key)
 					if(thing.loadFromDict(scriptDict[key])):
-						thing.setMeta(key)
 						root[script][key] = thing
 			allDict.erase(scriptName)
 	
