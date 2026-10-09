@@ -3,6 +3,7 @@ class_name DictFunc
 static func mergeDict(base:Dictionary,patch:Dictionary,keyChain:String = "")->Array[String]:
 	var overrideReport:Array[String] = []
 	for rawKey:String in patch:
+		if(rawKey == "tags+"):print(rawKey)
 		var key = rawKey
 		var arrayMergeRule:=MERGE_TYPE.REPLACE
 		if(rawKey.ends_with("+")):
@@ -17,7 +18,8 @@ static func mergeDict(base:Dictionary,patch:Dictionary,keyChain:String = "")->Ar
 				base[key] = {}
 				overrideReport.append_array(mergeDict(base[key],patch[rawKey],keyChain+"."+key))
 			elif(patch[rawKey] is Array):
-				base[key] = patch[rawKey]
+				if(arrayMergeRule == MERGE_TYPE.ERASE):base[key] = []
+				else:base[key] = patch[rawKey]
 			else:
 				base[key] = patch[rawKey]
 		elif(dictAt(base,key) && dictAt(patch,rawKey)):
@@ -25,23 +27,23 @@ static func mergeDict(base:Dictionary,patch:Dictionary,keyChain:String = "")->Ar
 		elif(arrayAt(base,key) && arrayAt(patch,rawKey)):
 			match arrayMergeRule:
 				MERGE_TYPE.REPLACE:
-					base[key] = patch[rawKey]
-					overrideReport.append("[New at : %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
+					base[key] = patch[rawKey].duplicate(true)
+					overrideReport.append("[Replaced at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
 				MERGE_TYPE.APPEND:
 					base[key].append_array(patch[rawKey])
-					overrideReport.append("[Append at : %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
+					overrideReport.append("[Append at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
 				MERGE_TYPE.ERASE:
 					for k in patch[rawKey]:base[key].erase(k)
-					overrideReport.append("[Erased at : %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
+					overrideReport.append("[Erased at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
 		else:
 			base[key] = patch[rawKey]
-			overrideReport.append("[New at : %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
+			overrideReport.append("[New value at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
 	return overrideReport
 #==================================================================================================#
 enum MERGE_TYPE{
-	REPLACE,
-	APPEND,
-	ERASE
+	REPLACE=0,
+	APPEND=1,
+	ERASE=2
 }
 #==================================================================================================#
 static func intAt(dict:Dictionary,key:String)->bool:

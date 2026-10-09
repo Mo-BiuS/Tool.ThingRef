@@ -29,12 +29,13 @@ func _loadAllDict()->Dictionary:
 	var loadArray:Array = DictFunc.getArrayAt(loadDict,"LoadList")
 	for path:String in loadArray:
 		var sourceName:=path.trim_suffix("/").get_file()
-		var sourceDict:=_getDictFromFolder(path)
-		appendSource(sourceDict,sourceName)
-		appendPath(sourceDict,path)
-		var report:Array[String] = DictFunc.mergeDict(rep,sourceDict,sourceName)
-		for m:String in report:
-			_putMessage("DEF EDITED -> %s" % m)
+		var sourceList:=_getDictFromFolder(path)
+		for sourceDict:Dictionary in sourceList:
+			appendSource(sourceDict,sourceName)
+			appendPath(sourceDict,path)
+			var report:Array[String] = DictFunc.mergeDict(rep,sourceDict,sourceName)
+			for m:String in report:
+				_putMessage("DEF EDITED -> %s" % m)
 	return rep
 
 func _loadDefFromDict(allDict:Dictionary)->void:
@@ -66,21 +67,21 @@ func getDefCategories(script:GDScript)->Dictionary:
 	
 	return rep
 #==============================================================================#
-func _getDictFromFolder(path:String)->Dictionary:
+func _getDictFromFolder(path:String)->Array[Dictionary]:
 	var dir = DirAccess.open(path)
 	if(dir == null):
 		_putError("Dir not found : %s" % path)
-		return {}
+		return []
 	
-	var rep:Dictionary = {}
+	var rep:Array[Dictionary] = []
 	
 	dir.list_dir_begin()
 	var fileName = dir.get_next()
 	while fileName != "":
 		if dir.current_is_dir():
-			DictFunc.mergeDict(rep,_getDictFromFolder(path.path_join(fileName)))
+			rep.append_array(_getDictFromFolder(path.path_join(fileName)))
 		elif(fileName.ends_with(".json")):
-			DictFunc.mergeDict(rep,_loadJsonFromPath(path.path_join(fileName)))
+			rep.append(_loadJsonFromPath(path.path_join(fileName)))
 		fileName = dir.get_next()
 	dir.list_dir_end()
 	return rep

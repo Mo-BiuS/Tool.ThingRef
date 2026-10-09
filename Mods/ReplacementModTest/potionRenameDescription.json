@@ -5,11 +5,11 @@
 			"description":"TEST_0",
 		},
 		"RedPotion":{
-			"tags+":["Rune"],
+			"tags":["new"],
 			"description":"TEST_1",
 		},
 		"MajorRedPotion":{
-			"tags+":["Zog","Zig"],
+			"tags+":["plus"],
 			"description":"TEST_2",
 		}
 	}
