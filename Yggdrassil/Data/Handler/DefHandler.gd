@@ -32,6 +32,7 @@ func _loadAllDict()->Dictionary:
 		var sourceList:=_getDictFromFolder(path)
 		for sourceDict:Dictionary in sourceList:
 			appendSource(sourceDict,sourceName)
+			sourceDict = resolvePaths(sourceDict,path)
 			var report:Array[String] = mergeRefDict(rep,sourceDict,path,sourceName)
 			for m:String in report:
 				_putMessage("DEF EDITED -> %s" % m)
@@ -107,8 +108,6 @@ static func mergeRefDict(base:Dictionary,patch:Dictionary,path:String,keyChain:S
 		elif(rawKey.ends_with("-")):
 			key = rawKey.trim_suffix("-")
 			arrayMergeRule = DictFunc.MERGE_TYPE.ERASE
-		elif(rawKey.ends_with("~")):
-			key = rawKey.trim_suffix("~")
 		
 		if(!base.has(key)):
 			if(patch[rawKey] is Dictionary):
@@ -116,12 +115,9 @@ static func mergeRefDict(base:Dictionary,patch:Dictionary,path:String,keyChain:S
 				overrideReport.append_array(mergeRefDict(base[key],patch[rawKey],path,keyChain+"."+key))
 			elif(patch[rawKey] is Array):
 				if(arrayMergeRule == DictFunc.MERGE_TYPE.ERASE):base[key] = []
-				else:base[key] = patch[rawKey].duplicate(true)
+				else:base[key] = patch[rawKey]
 			else:
-				if(patch[rawKey] is String && rawKey.ends_with("~")):
-					base[key] = path.path_join(patch[rawKey])
-				else:
-					base[key] = patch[rawKey]
+				base[key] = patch[rawKey]
 		elif(DictFunc.dictAt(base,key) && DictFunc.dictAt(patch,rawKey)):
 			match arrayMergeRule:
 				DictFunc.MERGE_TYPE.ERASE:
@@ -132,7 +128,7 @@ static func mergeRefDict(base:Dictionary,patch:Dictionary,path:String,keyChain:S
 		elif(DictFunc.arrayAt(base,key) && DictFunc.arrayAt(patch,rawKey)):
 			match arrayMergeRule:
 				DictFunc.MERGE_TYPE.REPLACE:
-					base[key] = patch[rawKey].duplicate(true)
+					base[key] = patch[rawKey]
 					overrideReport.append("[Replaced at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
 				DictFunc.MERGE_TYPE.APPEND:
 					base[key].append_array(patch[rawKey])
@@ -141,12 +137,32 @@ static func mergeRefDict(base:Dictionary,patch:Dictionary,path:String,keyChain:S
 					for k in patch[rawKey]:base[key].erase(k)
 					overrideReport.append("[Erased at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
 		else:
-			if(patch[rawKey] is String && rawKey.ends_with("~")):
-				base[key] = path.path_join(patch[rawKey])
-			else:
-				base[key] = patch[rawKey]
+			base[key] = patch[rawKey]
 			overrideReport.append("[New value at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
 	return overrideReport
+static func resolvePaths(value:Variant, path:String)->Variant:
+	if(value is Dictionary):
+		var out := {}
+		for rawKey:String in value:
+			var k := rawKey
+			var op := ""
+			if(k.ends_with("+") || k.ends_with("-")):
+				op = k.right(1)
+				k = k.left(-1)
+			var v = resolvePaths(value[rawKey], path)
+			if(k.ends_with("~")):
+				k = k.trim_suffix("~")
+				v = _joinPath(v, path)
+			out[k + op] = v
+		return out
+	elif(value is Array):
+		return value.map(func(e): return resolvePaths(e, path))
+	return value
+static func _joinPath(v:Variant, path:String)->Variant:
+	if(v is String):
+		return path.path_join(v)
+	if(v is Array):return v.map(func(e): return path.path_join(e) if e is String else e)
+	return v
 func appendSource(dict:Dictionary,name:String)->void:
 	for script in defLoadOrder:
 		for def in DictFunc.getDictAt(dict,script.get_global_name()).values():

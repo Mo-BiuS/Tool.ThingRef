@@ -1,5 +1,11 @@
 {
 	"TerrainDef":{
-		
+		"Spring":{
+			"tileSize":[16,16],
+			"tilemapData":[
+				{"tilemapPath~":"Sprite/forest.png","maskPath~":"Sprite/forestMask.png"},
+				{"tilemapPath~":"Sprite/grassland.png","maskPath~":"Sprite/grasslandMask.png"}
+			]
+		}
 	}
 }
