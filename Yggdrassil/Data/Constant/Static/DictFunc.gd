@@ -1,43 +1,19 @@
 class_name DictFunc
 
-static func mergeDict(base:Dictionary,patch:Dictionary,keyChain:String = "")->Array[String]:
+static func mergeDict(d1:Dictionary,d2:Dictionary,keyChain:String = "")->Array[String]:
 	var overrideReport:Array[String] = []
-	for rawKey:String in patch:
-		if(rawKey == "tags+"):print(rawKey)
-		var key = rawKey
-		var arrayMergeRule:=MERGE_TYPE.REPLACE
-		if(rawKey.ends_with("+")):
-			key = rawKey.trim_suffix("+")
-			arrayMergeRule = MERGE_TYPE.APPEND
-		elif(rawKey.ends_with("-")):
-			key = rawKey.trim_suffix("-")
-			arrayMergeRule = MERGE_TYPE.ERASE
-		
-		if(!base.has(key)):
-			if(patch[rawKey] is Dictionary):
-				base[key] = {}
-				overrideReport.append_array(mergeDict(base[key],patch[rawKey],keyChain+"."+key))
-			elif(patch[rawKey] is Array):
-				if(arrayMergeRule == MERGE_TYPE.ERASE):base[key] = []
-				else:base[key] = patch[rawKey]
+	for key in d2:
+		if(d1.has(key)):
+			if(d1[key] is Dictionary && d2[key] is Dictionary):
+				overrideReport.append_array(mergeDict(d1[key],d2[key],keyChain+"."+key))
 			else:
-				base[key] = patch[rawKey]
-		elif(dictAt(base,key) && dictAt(patch,rawKey)):
-			overrideReport.append_array(mergeDict(base[key],patch[rawKey],keyChain+"."+key))
-		elif(arrayAt(base,key) && arrayAt(patch,rawKey)):
-			match arrayMergeRule:
-				MERGE_TYPE.REPLACE:
-					base[key] = patch[rawKey].duplicate(true)
-					overrideReport.append("[Replaced at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
-				MERGE_TYPE.APPEND:
-					base[key].append_array(patch[rawKey])
-					overrideReport.append("[Append at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
-				MERGE_TYPE.ERASE:
-					for k in patch[rawKey]:base[key].erase(k)
-					overrideReport.append("[Erased at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
+				if(arrayAt(d1,key) && arrayAt(d2,key)):
+					d1[key].append_array(d2[key])
+				else:
+					d1[key] = d2[key]
+				overrideReport.append("[At : %s -> Property : %s -> New Value : %s]" % [keyChain,key,d2[key]])
 		else:
-			base[key] = patch[rawKey]
-			overrideReport.append("[New value at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
+			d1[key] = d2[key]
 	return overrideReport
 #==================================================================================================#
 enum MERGE_TYPE{

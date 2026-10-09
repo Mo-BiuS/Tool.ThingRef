@@ -32,8 +32,7 @@ func _loadAllDict()->Dictionary:
 		var sourceList:=_getDictFromFolder(path)
 		for sourceDict:Dictionary in sourceList:
 			appendSource(sourceDict,sourceName)
-			appendPath(sourceDict,path)
-			var report:Array[String] = DictFunc.mergeDict(rep,sourceDict,sourceName)
+			var report:Array[String] = mergeRefDict(rep,sourceDict,path,sourceName)
 			for m:String in report:
 				_putMessage("DEF EDITED -> %s" % m)
 	return rep
@@ -97,17 +96,63 @@ func _loadJsonFromPath(path:String)->Dictionary:
 		return json.data
 	return {}
 #==============================================================================#
+static func mergeRefDict(base:Dictionary,patch:Dictionary,path:String,keyChain:String)->Array[String]:
+	var overrideReport:Array[String] = []
+	for rawKey:String in patch:
+		var key = rawKey
+		var arrayMergeRule:=DictFunc.MERGE_TYPE.REPLACE
+		if(rawKey.ends_with("+")):
+			key = rawKey.trim_suffix("+")
+			arrayMergeRule = DictFunc.MERGE_TYPE.APPEND
+		elif(rawKey.ends_with("-")):
+			key = rawKey.trim_suffix("-")
+			arrayMergeRule = DictFunc.MERGE_TYPE.ERASE
+		elif(rawKey.ends_with("~")):
+			key = rawKey.trim_suffix("~")
+		
+		if(!base.has(key)):
+			if(patch[rawKey] is Dictionary):
+				base[key] = {}
+				overrideReport.append_array(mergeRefDict(base[key],patch[rawKey],path,keyChain+"."+key))
+			elif(patch[rawKey] is Array):
+				if(arrayMergeRule == DictFunc.MERGE_TYPE.ERASE):base[key] = []
+				else:base[key] = patch[rawKey].duplicate(true)
+			else:
+				if(patch[rawKey] is String && rawKey.ends_with("~")):
+					base[key] = path.path_join(patch[rawKey])
+				else:
+					base[key] = patch[rawKey]
+		elif(DictFunc.dictAt(base,key) && DictFunc.dictAt(patch,rawKey)):
+			match arrayMergeRule:
+				DictFunc.MERGE_TYPE.ERASE:
+					base.erase(key)
+					overrideReport.append("[Erased at \t: %s.%s]" % [keyChain,key])
+				_:
+					overrideReport.append_array(mergeRefDict(base[key],patch[rawKey],path,keyChain+"."+key))
+		elif(DictFunc.arrayAt(base,key) && DictFunc.arrayAt(patch,rawKey)):
+			match arrayMergeRule:
+				DictFunc.MERGE_TYPE.REPLACE:
+					base[key] = patch[rawKey].duplicate(true)
+					overrideReport.append("[Replaced at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
+				DictFunc.MERGE_TYPE.APPEND:
+					base[key].append_array(patch[rawKey])
+					overrideReport.append("[Append at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
+				DictFunc.MERGE_TYPE.ERASE:
+					for k in patch[rawKey]:base[key].erase(k)
+					overrideReport.append("[Erased at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
+		else:
+			if(patch[rawKey] is String && rawKey.ends_with("~")):
+				base[key] = path.path_join(patch[rawKey])
+			else:
+				base[key] = patch[rawKey]
+			overrideReport.append("[New value at \t: %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
+	return overrideReport
 func appendSource(dict:Dictionary,name:String)->void:
 	for script in defLoadOrder:
 		for def in DictFunc.getDictAt(dict,script.get_global_name()).values():
 			if(def is Dictionary):
 				if(DictFunc.arrayAt(def,"Sources+")):def["Sources+"].append(name)
 				else:def["Sources+"] = [name]
-func appendPath(dict:Dictionary,path:String)->void:
-	if(DictFunc.stringAt(dict,"path")):dict["path"] = path.path_join(dict["path"])
-	else:
-		for key in dict.keys():
-			if(DictFunc.dictAt(dict,key)):appendPath(dict[key],path)
 func clear()->void:
 	root.clear()
 func exit()->void:

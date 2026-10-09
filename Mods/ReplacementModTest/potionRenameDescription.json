@@ -1,11 +1,9 @@
 {
 	"ItemDef":{
-		"MinorRedPotion":{
-			"tags-":["Potion"],
-			"description":"TEST_0",
+		"MinorRedPotion-":{
 		},
 		"RedPotion":{
-			"tags":["new"],
+			"tags":["Healing"],
 			"description":"TEST_1",
 		},
 		"MajorRedPotion":{
