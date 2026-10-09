@@ -1,6 +1,7 @@
 {
 	"ItemDef":{
 		"MinorRedRune":{
+			"tags":["Rune"],
 			"name":"Minor red rune",
 			"description":"0",
 			"atlasData":{
@@ -9,6 +10,7 @@
 			}
 		},
 		"RedRune":{
+			"tags":["Rune"],
 			"name":"Red rune",
 			"description":"1",
 			"atlasData":{
@@ -17,6 +19,7 @@
 			}
 		},
 		"MajorRedRune":{
+			"tags":["Rune"],
 			"name":"Major red rune",
 			"description":"2",
 			"atlasData":{

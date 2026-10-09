@@ -9,6 +9,8 @@ var _ressourceHandlerArray:Array[RessourceHandler] = [
 ]
 var _nHandlerFinished:int
 
+var loadingTime:int
+
 func _ready() -> void:
 	_defHandler.finishedLoading.connect(_defHandlerFinishedLoading)
 	
@@ -22,7 +24,9 @@ func _ready() -> void:
 func _stateChanged(_old:E_State.Value,new:E_State.Value)->void:
 	match new:
 		E_State.LOADING_RESSOURCE_START:
+			print("START LOADING")
 			_nHandlerFinished = 0
+			loadingTime = Time.get_ticks_msec()
 			for r:RessourceHandler in _ressourceHandlerArray:r.clear()
 			for r:RessourceHandler in _ressourceHandlerArray:r.startLoading()
 
@@ -34,6 +38,7 @@ func _defHandlerFinishedLoading()->void:
 func _handlerFinishedLoading()->void:
 	_nHandlerFinished += 1
 	if(_nHandlerFinished >= _ressourceHandlerArray.size()):
+		print("END LOADING : %ss" % str(float(Time.get_ticks_msec()-loadingTime)/1000))
 		WorldEvent.setState(E_State.LOADING_RESSOURCE_FINISHED)
 #==============================================================================#
 func getDefCategories(script:GDScript)->Dictionary:

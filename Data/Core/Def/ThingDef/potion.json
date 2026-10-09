@@ -1,6 +1,7 @@
 {
 	"ItemDef":{
 		"MinorRedPotion":{
+			"tags":["Potion"],
 			"name":"Minor red potion",
 			"description":"0",
 			"atlasData":{
@@ -9,6 +10,7 @@
 			}
 		},
 		"RedPotion":{
+			"tags":["Potion"],
 			"name":"Red potion",
 			"description":"1",
 			"atlasData":{
@@ -17,6 +19,7 @@
 			}
 		},
 		"MajorRedPotion":{
+			"tags":["Potion"],
 			"name":"Major red potion",
 			"description":"2",
 			"atlasData":{

@@ -7,12 +7,10 @@ var defLoadOrder:Array[GDScript] = [
 	PlayerDef,
 	AudioDef
 ]
-var mergeRule:=DictFunc.MergeRule.new()
 var root:Dictionary[GDScript,Dictionary]
 
 func init()->void:
 	source = "DefHandler"
-	mergeRule.rule["Sources"] = DictFunc.MERGE_TYPE.APPEND
 #==============================================================================#
 func startLoading()->void:
 	_loadingThread = Thread.new()
@@ -34,7 +32,7 @@ func _loadAllDict()->Dictionary:
 		var sourceDict:=_getDictFromFolder(path)
 		appendSource(sourceDict,sourceName)
 		appendPath(sourceDict,path)
-		var report:Array[String] = DictFunc.mergeDict(rep,sourceDict,mergeRule,sourceName)
+		var report:Array[String] = DictFunc.mergeDict(rep,sourceDict,sourceName)
 		for m:String in report:
 			_putMessage("DEF EDITED -> %s" % m)
 	return rep
@@ -53,7 +51,7 @@ func _loadDefFromDict(allDict:Dictionary)->void:
 		allDict.erase(scriptName)
 	
 	if(!allDict.is_empty()):
-		_putWarning("Def dict not empty %s" % allDict)
+		_putWarning("Def dict not empty :\n%s" % allDict)
 
 #==============================================================================#
 func getDefCategories(script:GDScript)->Dictionary:
@@ -102,8 +100,8 @@ func appendSource(dict:Dictionary,name:String)->void:
 	for script in defLoadOrder:
 		for def in DictFunc.getDictAt(dict,script.get_global_name()).values():
 			if(def is Dictionary):
-				if(DictFunc.arrayAt(def,"Sources")):def["Sources"].append(name)
-				else:def["Sources"] = [name]
+				if(DictFunc.arrayAt(def,"Sources+")):def["Sources+"].append(name)
+				else:def["Sources+"] = [name]
 func appendPath(dict:Dictionary,path:String)->void:
 	if(DictFunc.stringAt(dict,"path")):dict["path"] = path.path_join(dict["path"])
 	else:

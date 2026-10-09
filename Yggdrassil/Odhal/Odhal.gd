@@ -8,8 +8,5 @@ func  _ready() -> void:
 
 func _stateChanged(_old:E_State.Value,new:E_State.Value)->void:
 	match new:
-		E_State.LOADING_RESSOURCE_START:
-			print("START")
 		E_State.LOADING_RESSOURCE_FINISHED:
-			print("FINISHED")
 			playtest.startTest()

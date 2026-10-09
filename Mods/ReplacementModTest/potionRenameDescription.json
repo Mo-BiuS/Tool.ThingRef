@@ -1,12 +1,15 @@
 {
 	"ItemDef":{
 		"MinorRedPotion":{
+			"tags-":["Potion"],
 			"description":"TEST_0",
 		},
 		"RedPotion":{
+			"tags+":["Rune"],
 			"description":"TEST_1",
 		},
 		"MajorRedPotion":{
+			"tags+":["Zog","Zig"],
 			"description":"TEST_2",
 		}
 	}

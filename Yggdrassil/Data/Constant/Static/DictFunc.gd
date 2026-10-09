@@ -1,31 +1,47 @@
 class_name DictFunc
 
-static func mergeDict(d1:Dictionary,d2:Dictionary,mergeRule:MergeRule=MergeRule.new(),keyChain:String = "")->Array[String]:
+static func mergeDict(base:Dictionary,patch:Dictionary,keyChain:String = "")->Array[String]:
 	var overrideReport:Array[String] = []
-	for key in d2:
-		if(d1.has(key)):
-			if(d1[key] is Dictionary && d2[key] is Dictionary):
-				overrideReport.append_array(mergeDict(d1[key],d2[key],mergeRule,keyChain+"."+key))
+	for rawKey:String in patch:
+		var key = rawKey
+		var arrayMergeRule:=MERGE_TYPE.REPLACE
+		if(rawKey.ends_with("+")):
+			key = rawKey.trim_suffix("+")
+			arrayMergeRule = MERGE_TYPE.APPEND
+		elif(rawKey.ends_with("-")):
+			key = rawKey.trim_suffix("-")
+			arrayMergeRule = MERGE_TYPE.ERASE
+		
+		if(!base.has(key)):
+			if(patch[rawKey] is Dictionary):
+				base[key] = {}
+				overrideReport.append_array(mergeDict(base[key],patch[rawKey],keyChain+"."+key))
+			elif(patch[rawKey] is Array):
+				base[key] = patch[rawKey]
 			else:
-				if(arrayAt(d1,key) && arrayAt(d2,key)):
-					var rule:=mergeRule.default
-					if(mergeRule.rule.has(key)):rule = mergeRule.rule[key]
-					match rule:
-						MERGE_TYPE.REPLACE:d1[key] = d2[key]
-						MERGE_TYPE.APPEND:d1[key].append_array(d2[key])
-				else:
-					d1[key] = d2[key]
-				overrideReport.append("[At : %s.%s -> New : %s]" % [keyChain,key,d2[key]])
+				base[key] = patch[rawKey]
+		elif(dictAt(base,key) && dictAt(patch,rawKey)):
+			overrideReport.append_array(mergeDict(base[key],patch[rawKey],keyChain+"."+key))
+		elif(arrayAt(base,key) && arrayAt(patch,rawKey)):
+			match arrayMergeRule:
+				MERGE_TYPE.REPLACE:
+					base[key] = patch[rawKey]
+					overrideReport.append("[New at : %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
+				MERGE_TYPE.APPEND:
+					base[key].append_array(patch[rawKey])
+					overrideReport.append("[Append at : %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
+				MERGE_TYPE.ERASE:
+					for k in patch[rawKey]:base[key].erase(k)
+					overrideReport.append("[Erased at : %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
 		else:
-			d1[key] = d2[key]
+			base[key] = patch[rawKey]
+			overrideReport.append("[New at : %s.%s -> %s]" % [keyChain,key,patch[rawKey]])
 	return overrideReport
 #==================================================================================================#
-class MergeRule:
-	var default:=MERGE_TYPE.REPLACE
-	var rule:Dictionary[String,MERGE_TYPE]
 enum MERGE_TYPE{
 	REPLACE,
-	APPEND
+	APPEND,
+	ERASE
 }
 #==================================================================================================#
 static func intAt(dict:Dictionary,key:String)->bool:
@@ -69,7 +85,7 @@ static func stringArrayAt(dict:Dictionary,key:String)->bool:
 	for value  in array:
 		if !value is String : return false
 	return true
-static func getStringArrayAt(dict:Dictionary,key:String,default:=[])->Array[String]:
+static func getStringArrayAt(dict:Dictionary,key:String,default:Array[String]=[])->Array[String]:
 	if(!stringArrayAt(dict,key)):return default
 	var rep:Array[String] = []
 	var array = getArrayAt(dict,key)

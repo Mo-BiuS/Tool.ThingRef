@@ -20,12 +20,17 @@ config/icon="uid://dryq2mvojle3n"
 
 WorldEvent="*uid://c4kwu4rdhnfbj"
 WorldData="*uid://b8s81vwjq7eph"
+BetterTerrain="*uid://bj1hch2r5ye4e"
 
 [display]
 
 window/size/viewport_width=800
 window/size/viewport_height=800
 window/size/resizable=false
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/better-terrain/plugin.cfg")
 
 [file_customization]
 
@@ -36,7 +41,8 @@ folder_colors={
 "res://Yggdrassil/Data/Constant/": "gray",
 "res://Yggdrassil/Interface/": "green",
 "res://Yggdrassil/Odhal/": "purple",
-"res://Yggdrassil/Ressources/": "orange"
+"res://Yggdrassil/Ressources/": "orange",
+"res://addons/": "pink"
 }
 
 [physics]
