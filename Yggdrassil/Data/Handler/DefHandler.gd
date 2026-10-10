@@ -5,7 +5,8 @@ const LOAD_LIST:="res://LoadList.json"
 var defLoadOrder:Array[GDScript] = [
 	ItemDef,
 	PlayerDef,
-	AudioDef
+	TileSetDef,
+	AudioDef,
 ]
 var root:Dictionary[GDScript,Dictionary]
 
@@ -33,7 +34,7 @@ func _loadAllDict()->Dictionary:
 		for sourceDict:Dictionary in sourceList:
 			appendSource(sourceDict,sourceName)
 			sourceDict = resolvePaths(sourceDict,path)
-			var report:Array[String] = mergeRefDict(rep,sourceDict,path,sourceName)
+			var report:Array[String] = mergeRefDict(rep,sourceDict,sourceName)
 			for m:String in report:
 				_putMessage("DEF EDITED -> %s" % m)
 	return rep
@@ -97,7 +98,7 @@ func _loadJsonFromPath(path:String)->Dictionary:
 		return json.data
 	return {}
 #==============================================================================#
-static func mergeRefDict(base:Dictionary,patch:Dictionary,path:String,keyChain:String)->Array[String]:
+static func mergeRefDict(base:Dictionary,patch:Dictionary,keyChain:String)->Array[String]:
 	var overrideReport:Array[String] = []
 	for rawKey:String in patch:
 		var key = rawKey
@@ -112,7 +113,7 @@ static func mergeRefDict(base:Dictionary,patch:Dictionary,path:String,keyChain:S
 		if(!base.has(key)):
 			if(patch[rawKey] is Dictionary):
 				base[key] = {}
-				overrideReport.append_array(mergeRefDict(base[key],patch[rawKey],path,keyChain+"."+key))
+				overrideReport.append_array(mergeRefDict(base[key],patch[rawKey],keyChain+"."+key))
 			elif(patch[rawKey] is Array):
 				if(arrayMergeRule == DictFunc.MERGE_TYPE.ERASE):base[key] = []
 				else:base[key] = patch[rawKey]
@@ -124,7 +125,7 @@ static func mergeRefDict(base:Dictionary,patch:Dictionary,path:String,keyChain:S
 					base.erase(key)
 					overrideReport.append("[Erased at \t: %s.%s]" % [keyChain,key])
 				_:
-					overrideReport.append_array(mergeRefDict(base[key],patch[rawKey],path,keyChain+"."+key))
+					overrideReport.append_array(mergeRefDict(base[key],patch[rawKey],keyChain+"."+key))
 		elif(DictFunc.arrayAt(base,key) && DictFunc.arrayAt(patch,rawKey)):
 			match arrayMergeRule:
 				DictFunc.MERGE_TYPE.REPLACE:
@@ -142,7 +143,7 @@ static func mergeRefDict(base:Dictionary,patch:Dictionary,path:String,keyChain:S
 	return overrideReport
 static func resolvePaths(value:Variant, path:String)->Variant:
 	if(value is Dictionary):
-		var out := {}
+		var rep := {}
 		for rawKey:String in value:
 			var k := rawKey
 			var op := ""
@@ -153,8 +154,8 @@ static func resolvePaths(value:Variant, path:String)->Variant:
 			if(k.ends_with("~")):
 				k = k.trim_suffix("~")
 				v = _joinPath(v, path)
-			out[k + op] = v
-		return out
+			rep[k + op] = v
+		return rep
 	elif(value is Array):
 		return value.map(func(e): return resolvePaths(e, path))
 	return value
@@ -166,9 +167,8 @@ static func _joinPath(v:Variant, path:String)->Variant:
 func appendSource(dict:Dictionary,name:String)->void:
 	for script in defLoadOrder:
 		for def in DictFunc.getDictAt(dict,script.get_global_name()).values():
-			if(def is Dictionary):
-				if(DictFunc.arrayAt(def,"Sources+")):def["Sources+"].append(name)
-				else:def["Sources+"] = [name]
+			if(def is Dictionary):def["Sources+"] = [name]
+#==============================================================================#
 func clear()->void:
 	root.clear()
 func exit()->void:

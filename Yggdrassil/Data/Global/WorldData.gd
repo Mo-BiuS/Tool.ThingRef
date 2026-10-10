@@ -52,6 +52,10 @@ func spriteFrameRequest(dest:Def,prop:String,dict:Dictionary)->int:
 	return _textureHandler.newSpriteFrameRequest(dest,prop,dict)
 func getSpriteFramesFromId(id:int)->SpriteFrames:
 	return _textureHandler.getSpriteFramesFromId(id)
+func tileSetRequest(dest:Def,prop:String,dict:Dictionary)->int:
+	return _textureHandler.newTileSetRequest(dest,prop,dict)
+func getTileSetFromId(id:int)->TileSet:
+	return _textureHandler.getTileSetFromId(id)
 
 func audioRequest(dest:Def,prop:String,dict:Dictionary)->int:
 	return _audioHandler.newAudioRequest(dest,prop,dict)

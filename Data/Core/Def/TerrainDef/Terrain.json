@@ -1,11 +1,49 @@
 {
-	"TerrainDef":{
+	"TileSetDef":{
 		"Spring":{
-			"tileSize":[16,16],
-			"tilemapData":[
-				{"tilemapPath~":"Sprite/forest.png","maskPath~":"Sprite/forestMask.png"},
-				{"tilemapPath~":"Sprite/grassland.png","maskPath~":"Sprite/grasslandMask.png"}
-			]
+			"TileSetData":{
+				"TileSize":[16,16],
+				"Textures":[
+					{"TileMapPath~":"Sprite/Tilemap_Forest.png","MaskPath~":"Sprite/Mask_Forest.png"},
+					{"TileMapPath~":"Sprite/Tilemap_Grassland.png","MaskPath~":"Sprite/Mask_Grassland.png"}
+				],
+				"Category":{
+				},
+				"TerrainData":{
+					"Grassland":{
+						"MaskValue":[0.584, 0.733, 0.655],
+						"Category":[]
+					},
+					"Forest":{
+						"MaskValue":[0.184, 0.282, 0.306],
+						"Category":[]
+					}
+				}
+			}
+		},
+		"Wall":{
+			"TileSetData":{
+				"TileSize":[16,16],
+				"Textures":[
+				{"TileMapPath~":"Sprite/Tilemap_WoodWall.png","MaskPath~":"Sprite/Mask_WoodWall.png"},
+				{"TileMapPath~":"Sprite/Tilemap_StoneWall.png","MaskPath~":"Sprite/Mask_StoneWall.png"}
+				],
+				"Category":{
+					"CategoryWall":{
+						"MaskValue":[1,1,1]
+					}
+				},
+				"TerrainData":{
+					"WoodWall":{
+						"MaskValue":[0.259, 0.231, 0.196],
+						"Category":["CategoryWall"]
+					},
+					"StoneWall":{
+						"MaskValue":[0.616, 0.616, 0.616],
+						"Category":["CategoryWall"]
+					}
+				}
+			}
 		}
 	}
 }

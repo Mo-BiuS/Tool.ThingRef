@@ -93,6 +93,23 @@ static func getVector2iAt(dict:Dictionary,key:String,default:=Vector2i.ZERO)->Ve
 	if(!vector2iAt(dict,key)):return default
 	var test:Array = dict[key]
 	return Vector2i(test[0],test[1])
+
+static func colorAt(dict:Dictionary,key:String)->bool:
+	var array:Array = getArrayAt(dict,key)
+	match array.size():
+		1,3,4:
+			for value in array:
+				if(!(value is int || value is float)):return false
+			return true
+		_:return false
+static func getColorAt(dict:Dictionary,key:String,default:=Color.BLACK)->Color:
+	if(!colorAt(dict,key)):return default
+	var array:=getArrayAt(dict,key)
+	match array.size():
+		1:return Color(array[0])
+		3:return Color(array[0],array[1],array[2])
+		4:return Color(array[0],array[1],array[2],array[3])
+		_:return default
 #==================================================================================================#
 static func _isInt(value)->bool:
 	return (value is int || (value is float && value == float(int(value))))
