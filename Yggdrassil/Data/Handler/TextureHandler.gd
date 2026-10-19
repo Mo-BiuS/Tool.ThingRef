@@ -1,5 +1,16 @@
 class_name TextureHandler extends RessourceHandler
 
+const PEERING_OFFSETS := {
+	Vector2i(-1,  0): TileSet.CELL_NEIGHBOR_LEFT_SIDE,
+	Vector2i( 1,  0): TileSet.CELL_NEIGHBOR_RIGHT_SIDE,
+	Vector2i( 0, -1): TileSet.CELL_NEIGHBOR_TOP_SIDE,
+	Vector2i( 0,  1): TileSet.CELL_NEIGHBOR_BOTTOM_SIDE,
+	Vector2i(-1, -1): TileSet.CELL_NEIGHBOR_TOP_LEFT_CORNER,
+	Vector2i( 1, -1): TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER,
+	Vector2i(-1,  1): TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER,
+	Vector2i( 1,  1): TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
+}
+
 var textureDict:Dictionary[String,Texture2D] = {}
 
 var keyToId:Dictionary[String,int] = {}
@@ -192,74 +203,24 @@ func _loadTileSetRequest(request:TileSetRequest)->int:
 					for y in int(texture.get_size().y/request.size.y):
 						src.create_tile(Vector2i(x,y))
 		
+		var categoryIdDict:Dictionary[String,int] = {}
 		for cat:TerrainData in request.categoryList:
 			cat.id = BetterTerrain.terrain_count(newTileSet)
 			BetterTerrain.add_terrain(newTileSet,cat.key,cat.color,BetterTerrain.TerrainType.CATEGORY)
+			categoryIdDict[cat.key] = cat.id
 		
 		for terrain:TerrainData in request.terrainList:
 			terrain.id = BetterTerrain.terrain_count(newTileSet)
-			var categoryIds:Array[int] = []
-			for categoryKey: String in terrain.categories:
-				for cat: TerrainData in request.categoryList:
-					if cat.key == categoryKey:
-						categoryIds.append(cat.id)
-						break
-			BetterTerrain.add_terrain(newTileSet,terrain.key,terrain.color,BetterTerrain.TerrainType.MATCH_TILES,categoryIds)
+			var terrainCat:Array[int]
+			for catName:String in terrain.categories:
+				if(categoryIdDict.has(catName)):terrainCat.append(categoryIdDict[catName])
+			BetterTerrain.add_terrain(newTileSet,terrain.key,terrain.color,BetterTerrain.TerrainType.MATCH_TILES,terrainCat)
 			for index:int in maskDict.keys():
-				var bitImage:=maskDict[index]
-				for x in int(bitImage.get_size().x/3):
-					for y in int(bitImage.get_size().y/3):
-						var pos:=Vector2i(x,y)*3+Vector2i.ONE
-						var tileData:TileData = sourceDict[index].get_tile_data(Vector2i(x,y),0)
-						if(tileData != null):
-							if(bitImage.get_pixel(pos.x,pos.y).to_rgba32() == terrain.color.to_rgba32()):
-								BetterTerrain.set_tile_terrain_type(newTileSet,tileData,terrain.id)
-							if(bitImage.get_pixel(pos.x-1,pos.y).to_rgba32() == terrain.color.to_rgba32()):
-								BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_LEFT_SIDE,terrain.id)
-							if(bitImage.get_pixel(pos.x,pos.y+1).to_rgba32() == terrain.color.to_rgba32()):
-								BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_BOTTOM_SIDE,terrain.id)
-							if(bitImage.get_pixel(pos.x,pos.y-1).to_rgba32() == terrain.color.to_rgba32()):
-								BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_TOP_SIDE,terrain.id)
-							if(bitImage.get_pixel(pos.x+1,pos.y).to_rgba32() == terrain.color.to_rgba32()):
-								BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_RIGHT_SIDE,terrain.id)
-							
-							if(bitImage.get_pixel(pos.x-1,pos.y-1).to_rgba32() == terrain.color.to_rgba32()):
-								BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_TOP_LEFT_CORNER,terrain.id)
-							if(bitImage.get_pixel(pos.x+1,pos.y-1).to_rgba32() == terrain.color.to_rgba32()):
-								BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_TOP_RIGHT_CORNER,terrain.id)
-							if(bitImage.get_pixel(pos.x-1,pos.y+1).to_rgba32() == terrain.color.to_rgba32()):
-								BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER,terrain.id)
-							if(bitImage.get_pixel(pos.x+1,pos.y+1).to_rgba32() == terrain.color.to_rgba32()):
-								BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,terrain.id)
-			
-			for cat:TerrainData in request.categoryList:
-				for index:int in maskDict.keys():
-						var bitImage:=maskDict[index]
-						for x in int(bitImage.get_size().x/3):
-							for y in int(bitImage.get_size().y/3):
-								var pos:=Vector2i(x,y)*3+Vector2i.ONE
-								var tileData:TileData = sourceDict[index].get_tile_data(Vector2i(x,y),0)
-								if(tileData != null):
-									if(bitImage.get_pixel(pos.x,pos.y).to_rgba32() == cat.color.to_rgba32()):
-										BetterTerrain.set_tile_terrain_type(newTileSet,tileData,cat.id)
-								
-									if(bitImage.get_pixel(pos.x-1,pos.y).to_rgba32() == cat.color.to_rgba32()):
-										BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_LEFT_SIDE,cat.id)
-									if(bitImage.get_pixel(pos.x,pos.y+1).to_rgba32() == cat.color.to_rgba32()):
-										BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_BOTTOM_SIDE,cat.id)
-									if(bitImage.get_pixel(pos.x,pos.y-1).to_rgba32() == cat.color.to_rgba32()):
-										BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_TOP_SIDE,cat.id)
-									if(bitImage.get_pixel(pos.x+1,pos.y).to_rgba32() == cat.color.to_rgba32()):
-										BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_RIGHT_SIDE,cat.id)
-									
-									if(bitImage.get_pixel(pos.x-1,pos.y-1).to_rgba32() == cat.color.to_rgba32()):
-										BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_TOP_LEFT_CORNER,cat.id)
-									if(bitImage.get_pixel(pos.x+1,pos.y-1).to_rgba32() == cat.color.to_rgba32()):
-										BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_TOP_RIGHT_CORNER,cat.id)
-									if(bitImage.get_pixel(pos.x-1,pos.y+1).to_rgba32() == cat.color.to_rgba32()):
-										BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER,cat.id)
-									if(bitImage.get_pixel(pos.x+1,pos.y+1).to_rgba32() == cat.color.to_rgba32()):
-										BetterTerrain.add_tile_peering_type(newTileSet,tileData,TileSet.CellNeighbor.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,cat.id)
+				_applyTileSetMask(newTileSet,terrain,maskDict[index],sourceDict[index])
+		
+		for cat:TerrainData in request.categoryList:
+			for index:int in maskDict.keys():
+				_applyTileSetMask(newTileSet,cat,maskDict[index],sourceDict[index])
 		
 		loadingMutex.lock()
 		
@@ -270,6 +231,22 @@ func _loadTileSetRequest(request:TileSetRequest)->int:
 		loadingMutex.unlock()
 	request.destination.set_deferred(request.property, id)
 	return id
+func _applyTileSetMask(newTileSet:TileSet,terrainData:TerrainData,bitImage:Image, tileSetSource:TileSetAtlasSource)->void:
+	var targetColor := terrainData.color.to_rgba32()
+	var gridSize:Vector2i = Vector2(bitImage.get_size()) / 3
+	
+	for x in gridSize.x:
+		for y in gridSize.y:
+			var tileData := tileSetSource.get_tile_data(Vector2i(x,y), 0)
+			if tileData != null:
+				var center := Vector2i(x,y)*3 + Vector2i.ONE
+				
+				if bitImage.get_pixelv(center).to_rgba32() == targetColor:
+					BetterTerrain.set_tile_terrain_type(newTileSet, tileData, terrainData.id)
+				for offset in PEERING_OFFSETS:
+					if bitImage.get_pixelv(center + offset).to_rgba32() == targetColor:
+						BetterTerrain.add_tile_peering_type(newTileSet, tileData, PEERING_OFFSETS[offset], terrainData.id)
+
 func getTileSetFromId(id:int)->TileSet:
 	var rep:TileSet = null
 	loadingMutex.lock()
