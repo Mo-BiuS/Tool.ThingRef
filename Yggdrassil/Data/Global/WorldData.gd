@@ -12,6 +12,10 @@ var _nHandlerFinished:int
 var loadingTime:int
 
 func _ready() -> void:
+	_defHandler.defLoadOrder.append(ItemDef)
+	_defHandler.defLoadOrder.append(PlayerDef)
+	_defHandler.defLoadOrder.append(TileSetDef)
+	_defHandler.defLoadOrder.append(AudioDef)
 	_defHandler.finishedLoading.connect(_defHandlerFinishedLoading)
 	
 	for r:RessourceHandler in _ressourceHandlerArray:
