@@ -204,12 +204,12 @@ func _loadTileSetRequest(request:TileSetRequest)->int:
 						src.create_tile(Vector2i(x,y))
 		
 		var categoryIdDict:Dictionary[String,int] = {}
-		for cat:TerrainData in request.categoryList:
+		for cat:RawTerrainData in request.categoryList:
 			cat.id = BetterTerrain.terrain_count(newTileSet)
 			BetterTerrain.add_terrain(newTileSet,cat.key,cat.color,BetterTerrain.TerrainType.CATEGORY)
 			categoryIdDict[cat.key] = cat.id
 		
-		for terrain:TerrainData in request.terrainList:
+		for terrain:RawTerrainData in request.terrainList:
 			terrain.id = BetterTerrain.terrain_count(newTileSet)
 			var terrainCat:Array[int]
 			for catName:String in terrain.categories:
@@ -218,7 +218,7 @@ func _loadTileSetRequest(request:TileSetRequest)->int:
 			for index:int in maskDict.keys():
 				_applyTileSetMask(newTileSet,terrain,maskDict[index],sourceDict[index])
 		
-		for cat:TerrainData in request.categoryList:
+		for cat:RawTerrainData in request.categoryList:
 			for index:int in maskDict.keys():
 				_applyTileSetMask(newTileSet,cat,maskDict[index],sourceDict[index])
 		
@@ -231,8 +231,8 @@ func _loadTileSetRequest(request:TileSetRequest)->int:
 		loadingMutex.unlock()
 	request.destination.set_deferred(request.property, id)
 	return id
-func _applyTileSetMask(newTileSet:TileSet,terrainData:TerrainData,bitImage:Image, tileSetSource:TileSetAtlasSource)->void:
-	var targetColor := terrainData.color.to_rgba32()
+func _applyTileSetMask(newTileSet:TileSet,RawTerrainData:RawTerrainData,bitImage:Image, tileSetSource:TileSetAtlasSource)->void:
+	var targetColor := RawTerrainData.color.to_rgba32()
 	var gridSize:Vector2i = Vector2(bitImage.get_size()) / 3
 	
 	for x in gridSize.x:
@@ -242,10 +242,10 @@ func _applyTileSetMask(newTileSet:TileSet,terrainData:TerrainData,bitImage:Image
 				var center := Vector2i(x,y)*3 + Vector2i.ONE
 				
 				if bitImage.get_pixelv(center).to_rgba32() == targetColor:
-					BetterTerrain.set_tile_terrain_type(newTileSet, tileData, terrainData.id)
+					BetterTerrain.set_tile_terrain_type(newTileSet, tileData, RawTerrainData.id)
 				for offset in PEERING_OFFSETS:
 					if bitImage.get_pixelv(center + offset).to_rgba32() == targetColor:
-						BetterTerrain.add_tile_peering_type(newTileSet, tileData, PEERING_OFFSETS[offset], terrainData.id)
+						BetterTerrain.add_tile_peering_type(newTileSet, tileData, PEERING_OFFSETS[offset], RawTerrainData.id)
 
 func getTileSetFromId(id:int)->TileSet:
 	var rep:TileSet = null

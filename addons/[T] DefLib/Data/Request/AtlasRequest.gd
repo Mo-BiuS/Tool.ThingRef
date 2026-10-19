@@ -6,7 +6,7 @@ static func isValidData(dict:Dictionary)->bool:
 	if(!DictFunc.fileAt(dict,"path")):return false
 	if(!DictFunc.rect2iAt(dict,"rect")):return false
 	return true
-static func createRequest(dest:ThingDef,prop:String,dict:Dictionary)->AtlasRequest:
+static func createRequest(dest:Def,prop:String,dict:Dictionary)->AtlasRequest:
 	var rep:=AtlasRequest.new()
 	rep.destination = dest
 	rep.property = prop

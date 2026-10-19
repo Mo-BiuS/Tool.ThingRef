@@ -3,10 +3,6 @@ class_name DefHandler extends RessourceHandler
 const LOAD_LIST:="res://LoadList.json"
 
 var defLoadOrder:Array[GDScript] = [
-	ItemDef,
-	PlayerDef,
-	TileSetDef,
-	AudioDef,
 ]
 var root:Dictionary[GDScript,Dictionary]
 

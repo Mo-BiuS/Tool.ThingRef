@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="[TOOL] - ThingRef"
+config/name="[TOOL] - DefLib"
 config/tags=PackedStringArray("tool")
 run/main_scene="uid://c1iq05rcjvsyr"
 config/features=PackedStringArray("4.6", "Forward Plus")
@@ -39,10 +39,9 @@ folder_colors={
 "res://Mods/": "pink",
 "res://Yggdrassil/": "gray",
 "res://Yggdrassil/Data/Constant/": "gray",
-"res://Yggdrassil/Interface/": "green",
 "res://Yggdrassil/Odhal/": "purple",
 "res://Yggdrassil/Ressources/": "orange",
-"res://addons/": "pink"
+"res://addons/": "gray"
 }
 
 [physics]

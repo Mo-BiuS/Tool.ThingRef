@@ -12,7 +12,7 @@ static func isValidData(dict:Dictionary)->bool:
 	for animKey in animTestDict.keys():
 		if(!(animKey is String && animTestDict[animKey] is Array && ArrayFunc.vector2iArrayAt(animTestDict[animKey]))):return false
 	return true
-static func createRequest(dest:ThingDef,prop:String,dict:Dictionary)->SpriteFramesRequest:
+static func createRequest(dest:Def,prop:String,dict:Dictionary)->SpriteFramesRequest:
 	var rep:=SpriteFramesRequest.new()
 	rep.destination = dest
 	rep.property = prop

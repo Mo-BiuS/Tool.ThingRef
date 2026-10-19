@@ -1,4 +1,4 @@
-class_name TerrainData extends RefCounted
+class_name RawTerrainData extends RefCounted
 
 var key:String
 var id:int
