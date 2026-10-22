@@ -1,12 +1,12 @@
-class_name TileSetRequest extends RessourceRequest
+class_name TileSetRequest extends ResourceRequest
 
 var size:Vector2i
-var categoryList:Array[RawTerrainData]
-var terrainList:Array[RawTerrainData]
+var categoryList:Array[LoadingTerrainStruct]
+var terrainList:Array[LoadingTerrainStruct]
 var textureDict:Dictionary[String,String]
 
 static func isValidData(dict:Dictionary)->bool:
-	if(!DictFunc.vector2iAt(dict,"TileSize")):return false
+	if(!DictFunc.positiveVector2iAt(dict,"TileSize")):return false
 	
 	var allCategoryDict := DictFunc.getDictAt(dict,"Category")
 	for catKey:String in allCategoryDict.keys():
@@ -40,7 +40,7 @@ static func createRequest(dest:Def,prop:String,dict:Dictionary)->TileSetRequest:
 	var allCategoryDict := DictFunc.getDictAt(dict,"Category")
 	for catKey:String in allCategoryDict.keys():
 		var categoryDict := DictFunc.getDictAt(allCategoryDict,catKey)
-		var terrainData:=RawTerrainData.new()
+		var terrainData:=LoadingTerrainStruct.new()
 		terrainData.key = catKey
 		terrainData.color = DictFunc.getColorAt(categoryDict,"MaskValue")
 		rep.categoryList.append(terrainData)
@@ -49,7 +49,7 @@ static func createRequest(dest:Def,prop:String,dict:Dictionary)->TileSetRequest:
 	var allTerrainDict := DictFunc.getDictAt(dict,"TerrainData")
 	for catKey:String in allTerrainDict.keys():
 		var terrainDict := DictFunc.getDictAt(allTerrainDict,catKey)
-		var terrainData:=RawTerrainData.new()
+		var terrainData:=LoadingTerrainStruct.new()
 		terrainData.key = catKey
 		terrainData.color = DictFunc.getColorAt(terrainDict,"MaskValue")
 		terrainData.categories = DictFunc.getStringArrayAt(terrainDict,"Category")

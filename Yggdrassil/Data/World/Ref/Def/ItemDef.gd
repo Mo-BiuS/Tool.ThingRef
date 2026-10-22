@@ -5,7 +5,7 @@ var tag:Array[String]
 
 func loadFromDict(dict:Dictionary)->bool:
 	if(!super.loadFromDict(dict)):return false
-	WorldData.atlasRequest(self,"atlasId",dict)
+	WorldDef.atlasRequest(self,"atlasId",dict)
 	tag = DictFunc.getStringArrayAt(dict,"tags")
 	return true
 func clear()->void:

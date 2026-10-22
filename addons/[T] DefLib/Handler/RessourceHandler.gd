@@ -1,4 +1,4 @@
-@abstract class_name RessourceHandler extends RefCounted
+@abstract class_name ResourceHandler extends RefCounted
 
 @warning_ignore("unused_signal") signal putMessage(m:Message)
 @warning_ignore("unused_signal") signal finishedLoading
@@ -11,26 +11,26 @@ var source:String
 @abstract func init()->void
 @abstract func startLoading()->void
 @abstract func clear()->void
-@abstract func exit()->void
+@abstract func interrupt()->void
 
 func _putMessage(message:String)->void:
 	var m:=Message.new()
 	m.source = source
 	m.gravity = MessageGravity.MESSAGE
 	m.message = message
-	putMessage.emit(m)
+	call_deferred("emit_signal","putMessage",m)
 func _putWarning(message:String)->void:
 	var m:=Message.new()
 	m.source = source
 	m.gravity = MessageGravity.WARNING
 	m.message = message
-	putMessage.emit(m)
+	call_deferred("emit_signal","putMessage",m)
 func _putError(message:String)->void:
 	var m:=Message.new()
 	m.source = source
 	m.gravity = MessageGravity.ERROR
 	m.message = message
-	putMessage.emit(m)
+	call_deferred("emit_signal","putMessage",m)
 	
 class Message:
 	var source:String

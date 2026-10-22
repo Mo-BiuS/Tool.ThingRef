@@ -1,39 +1,43 @@
 extends Node
 
-var  _defHandler:=DefHandler.new()
+var _defHandler:=DefHandler.new()
 var _textureHandler:=TextureHandler.new()
 var _audioHandler:=AudioHandler.new()
 
-var _ressourceHandlerArray:Array[RessourceHandler] = [
-	_defHandler,_textureHandler,_audioHandler
+var _resourceHandlerArray:Array[ResourceHandler] = [
+	_textureHandler,_audioHandler,_defHandler
 ]
 var _nHandlerFinished:int
 
-var loadingTime:int
+signal finishedLoading()
+signal putMessage(message:ResourceHandler.Message)
+
+var loadingTime:float
 
 func _ready() -> void:
-	_defHandler.defLoadOrder.append(ItemDef)
-	_defHandler.defLoadOrder.append(PlayerDef)
-	_defHandler.defLoadOrder.append(TileSetDef)
-	_defHandler.defLoadOrder.append(AudioDef)
 	_defHandler.finishedLoading.connect(_defHandlerFinishedLoading)
 	
-	for r:RessourceHandler in _ressourceHandlerArray:
+	for r:ResourceHandler in _resourceHandlerArray:
 		r.init()
 		r.putMessage.connect(_putMessage)
 		r.finishedLoading.connect(_handlerFinishedLoading)
+
+func startLoading()->void:
+	interrupt()
+	clear()
 	
-	WorldEvent.stateChanged.connect(_stateChanged)
+	_nHandlerFinished = 0
+	loadingTime = Time.get_ticks_msec()
+	for r:ResourceHandler in _resourceHandlerArray:r.startLoading()
 
-func _stateChanged(_old:E_State.Value,new:E_State.Value)->void:
-	match new:
-		E_State.LOADING_RESSOURCE_START:
-			print("START LOADING")
-			_nHandlerFinished = 0
-			loadingTime = Time.get_ticks_msec()
-			for r:RessourceHandler in _ressourceHandlerArray:r.clear()
-			for r:RessourceHandler in _ressourceHandlerArray:r.startLoading()
+func appendDef(script:GDScript)->void:
+	_defHandler.defLoadOrder.append(script)
 
+func clear()->void:
+	for r:ResourceHandler in _resourceHandlerArray:r.clear()
+
+func interrupt()->void:
+	for r:ResourceHandler in _resourceHandlerArray:r.interrupt()
 #==============================================================================#
 func _defHandlerFinishedLoading()->void:
 	_textureHandler.putStopRequest()
@@ -41,9 +45,9 @@ func _defHandlerFinishedLoading()->void:
 
 func _handlerFinishedLoading()->void:
 	_nHandlerFinished += 1
-	if(_nHandlerFinished >= _ressourceHandlerArray.size()):
-		print("END LOADING : %ss" % str(float(Time.get_ticks_msec()-loadingTime)/1000))
-		WorldEvent.setState(E_State.LOADING_RESSOURCE_FINISHED)
+	if(_nHandlerFinished >= _resourceHandlerArray.size()):
+		loadingTime = float(Time.get_ticks_msec()-loadingTime)/1000
+		finishedLoading.emit()
 #==============================================================================#
 func getDefCategories(script:GDScript)->Dictionary:
 	return _defHandler.getDefCategories(script)
@@ -68,8 +72,8 @@ func getAudioFromId(id:int)->AudioStream:
 #==============================================================================#
 #TEMPORAIRE, il faut un vrai systeme de message pour gérer ce merdier ><
 #Normalement il devrais émètre vers une interface
-func _putMessage(message:RessourceHandler.Message)->void:
-	print(message)
+func _putMessage(message:ResourceHandler.Message)->void:
+	putMessage.emit(message)
 #==============================================================================#
 func _exit_tree() -> void:
-	for r:RessourceHandler in _ressourceHandlerArray:r.exit()
+	interrupt()

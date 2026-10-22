@@ -1,4 +1,4 @@
-class_name AudioRequest extends RessourceRequest
+class_name AudioRequest extends ResourceRequest
 
 var audioPath:String
 

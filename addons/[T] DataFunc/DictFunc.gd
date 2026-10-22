@@ -89,6 +89,10 @@ static func vector2iAt(dict:Dictionary,key:String)->bool:
 	for i in test:
 		if ! _isInt(i):return false
 	return true
+static func positiveVector2iAt(dict:Dictionary,key:String)->bool:
+	if(!vector2iAt(dict,key)):return false
+	var test:Array = dict[key]
+	return test[0] > 0 && test[1] > 0
 static func getVector2iAt(dict:Dictionary,key:String,default:=Vector2i.ZERO)->Vector2i:
 	if(!vector2iAt(dict,key)):return default
 	var test:Array = dict[key]

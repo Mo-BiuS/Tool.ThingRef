@@ -1,4 +1,4 @@
-@abstract class_name RessourceRequest extends RefCounted
+@abstract class_name ResourceRequest extends RefCounted
 
 var destination:Def
 var property:String

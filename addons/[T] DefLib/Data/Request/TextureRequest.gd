@@ -1,3 +1,3 @@
-@abstract class_name TextureRequest extends RessourceRequest
+@abstract class_name TextureRequest extends ResourceRequest
 
 var texturePath:String

@@ -19,7 +19,7 @@ config/icon="uid://dryq2mvojle3n"
 [autoload]
 
 WorldEvent="*uid://c4kwu4rdhnfbj"
-WorldData="*uid://b8s81vwjq7eph"
+WorldDef="*uid://b8s81vwjq7eph"
 BetterTerrain="*uid://bj1hch2r5ye4e"
 
 [display]

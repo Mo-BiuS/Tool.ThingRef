@@ -1,10 +1,11 @@
-class_name DefHandler extends RessourceHandler
+class_name DefHandler extends ResourceHandler
 
 const LOAD_LIST:="res://LoadList.json"
 
 var defLoadOrder:Array[GDScript] = [
 ]
 var root:Dictionary[GDScript,Dictionary]
+var toInterupt:bool = false
 
 func init()->void:
 	source = "DefHandler"
@@ -16,15 +17,18 @@ func _loading()->void:
 	_loadDefFromDict(_loadAllDict())
 	call_deferred("_endLoading")
 func _endLoading()->void:
-	if _loadingThread != null && _loadingThread.is_started():
-		_loadingThread.wait_to_finish()
-	finishedLoading.emit()
+	if _loadingThread != null:
+		if(_loadingThread.is_started()):
+			_loadingThread.wait_to_finish()
+		_loadingThread = null
+		finishedLoading.emit()
 
 func _loadAllDict()->Dictionary:
 	var rep := {}
 	var loadDict:=_loadJsonFromPath(LOAD_LIST)
 	var loadArray:Array = DictFunc.getArrayAt(loadDict,"LoadList")
 	for path:String in loadArray:
+		if(toInterupt):break
 		var sourceName:=path.trim_suffix("/").get_file()
 		var sourceList:=_getDictFromFolder(path)
 		for sourceDict:Dictionary in sourceList:
@@ -36,20 +40,24 @@ func _loadAllDict()->Dictionary:
 	return rep
 
 func _loadDefFromDict(allDict:Dictionary)->void:
+	var nRoot:Dictionary[GDScript,Dictionary] = {}
 	for script in defLoadOrder:
+		if(toInterupt):break
 		var scriptName := script.get_global_name()
-		root[script] = {}
+		nRoot[script] = {}
 		var scriptDict:Dictionary = DictFunc.getDictAt(allDict,scriptName)
 		for key in scriptDict.keys():
 			if(DictFunc.dictAt(scriptDict,key)):
 				var thing:Def=script.new()
 				thing.setMeta(key)
 				if(thing.loadFromDict(scriptDict[key])):
-					root[script][key] = thing
+					nRoot[script][key] = thing
 		allDict.erase(scriptName)
 	
 	if(!allDict.is_empty()):
 		_putWarning("Def dict not empty :\n%s" % allDict)
+	
+	root = nRoot
 
 #==============================================================================#
 func getDefCategories(script:GDScript)->Dictionary:
@@ -73,14 +81,18 @@ func _getDictFromFolder(path:String)->Array[Dictionary]:
 	var rep:Array[Dictionary] = []
 	
 	dir.list_dir_begin()
-	var fileName = dir.get_next()
-	while fileName != "":
-		if dir.current_is_dir():
-			rep.append_array(_getDictFromFolder(path.path_join(fileName)))
-		elif(fileName.ends_with(".json")):
+	var fileArray := dir.get_files()
+	fileArray.sort()
+	for fileName in fileArray:
+		if(fileName.ends_with(".json")):
 			rep.append(_loadJsonFromPath(path.path_join(fileName)))
-		fileName = dir.get_next()
+	
+	var dirArray := dir.get_directories()
+	dirArray.sort()
+	for dirName in dirArray:
+		rep.append_array(_getDictFromFolder(path.path_join(dirName)))
 	dir.list_dir_end()
+	
 	return rep
 
 func _loadJsonFromPath(path:String)->Dictionary:
@@ -166,7 +178,13 @@ func appendSource(dict:Dictionary,name:String)->void:
 			if(def is Dictionary):def["Sources+"] = [name]
 #==============================================================================#
 func clear()->void:
+	for dict:Dictionary in root.values():
+		for def in dict.values():
+			if(def is Def):def.clear()
 	root.clear()
-func exit()->void:
+func interrupt()->void:
 	if _loadingThread != null && _loadingThread.is_started():
+		toInterupt = true
 		_loadingThread.wait_to_finish()
+		toInterupt = false
+	_loadingThread = null

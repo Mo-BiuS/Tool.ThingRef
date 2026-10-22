@@ -1,4 +1,4 @@
-class_name AudioHandler extends RessourceHandler
+class_name AudioHandler extends ResourceHandler
 
 var keyToId:Dictionary[String,int] = {}
 
@@ -13,21 +13,22 @@ func init()->void:
 	source = "AudioHandler"
 #==============================================================================#
 func startLoading()->void:
-	loadingQueue.clear()
 	_loadingThread = Thread.new()
 	_loadingSemaphore = Semaphore.new()
 	_loadingThread.start(_loading)
 func _loading()->void:
 	while true:
 		_loadingSemaphore.wait()
-		var request:RessourceRequest = loadingQueue.popFront()
+		var request:ResourceRequest = loadingQueue.popFront()
 		if(request is StopRequest):break
 		if(request is AudioRequest):_loadAudio(request)
 	call_deferred("_endLoading")
 func _endLoading()->void:
-	if _loadingThread != null && _loadingThread.is_started():
-		_loadingThread.wait_to_finish()
-	finishedLoading.emit()
+	if _loadingThread != null:
+		if(_loadingThread.is_started()):
+			_loadingThread.wait_to_finish()
+		_loadingThread = null
+		finishedLoading.emit()
 func putStopRequest()->void:
 	loadingQueue.pushBack(StopRequest.new())
 	_loadingSemaphore.post()
@@ -48,31 +49,31 @@ func newAudioRequest(dest:Def,prop:String,dict:Dictionary)->int:
 	_loadingSemaphore.post()
 	return 0
 func _loadAudio(request:AudioRequest)->int:
+	var id := -1
 	loadingMutex.lock()
 	if(keyToId.has(request.key)):
-		var rep:=keyToId[request.key]
+		id = keyToId[request.key]
 		loadingMutex.unlock()
-		return rep
-	loadingMutex.unlock()
-	
-	var stream:AudioStream
-	if(request.audioPath.ends_with(".mp3")):
-		stream = AudioStreamMP3.load_from_file(request.audioPath)
-	elif(request.audioPath.ends_with(".ogg")):
-		stream = AudioStreamOggVorbis.load_from_file(request.audioPath)
-	
-	if stream == null:
-		_putError("Audio file not valid or corrupted %s" % [request.audioPath])
-		return -1
-	
-	loadingMutex.lock()
-	var id := audioArray.size()
-	audioArray.append(stream)
-	keyToId[request.key] = id
-	loadingMutex.unlock()
+	else:
+		loadingMutex.unlock()
+		
+		var stream:AudioStream
+		if(request.audioPath.ends_with(".mp3")):
+			stream = AudioStreamMP3.load_from_file(request.audioPath)
+		elif(request.audioPath.ends_with(".ogg")):
+			stream = AudioStreamOggVorbis.load_from_file(request.audioPath)
+		
+		if stream == null:
+			_putError("Audio file not valid or corrupted %s" % [request.audioPath])
+			return -1
+		
+		loadingMutex.lock()
+		id = audioArray.size()
+		audioArray.append(stream)
+		keyToId[request.key] = id
+		loadingMutex.unlock()
 	
 	request.destination.set_deferred(request.property, id)
-	
 	return id
 
 func getAudioFromId(id:int)->AudioStream:
@@ -91,6 +92,9 @@ func clear()->void:
 	
 	loadingMutex.unlock()
 
-func exit()->void:
-	if _loadingThread != null and _loadingThread.is_started():
+func interrupt()->void:
+	if _loadingThread != null && _loadingThread.is_started():
+		loadingQueue.clear()
+		putStopRequest()
 		_loadingThread.wait_to_finish()
+	_loadingThread = null
