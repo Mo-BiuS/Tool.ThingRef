@@ -22,11 +22,8 @@ var spriteFramesArray:Array[SpriteFrames] = []
 var tileSetArray:Array[TileSet] = []
 
 var _loadingSemaphore:Semaphore
-var _tileSetSemaphore:Semaphore
 var loadingQueue:=DoubleLinkedList.new()
 var loadingMutex:=Mutex.new()
-
-var _tilemapStoredId:int
 
 func init()->void:
 	source = "TextureHandler"
@@ -34,7 +31,6 @@ func init()->void:
 func startLoading()->void:
 	_loadingThread = Thread.new()
 	_loadingSemaphore = Semaphore.new()
-	_tileSetSemaphore = Semaphore.new()
 	_loadingThread.start(_loading)
 func _loading()->void:
 	while true:
@@ -186,8 +182,10 @@ func newTileSetRequest(dest:Def,prop:String,dict:Dictionary)->int:
 	_loadingSemaphore.post()
 	return 0
 func _loadTileSetRequest(request:TileSetRequest)->int:
+	#THE MONSTER ><
 	var id:=_getIdFromKey(request.key)
 	if(id == -1):
+		#PHASE 1 : init
 		var newTileSet:=TileSet.new()
 		newTileSet.tile_size = request.size
 		
@@ -203,77 +201,74 @@ func _loadTileSetRequest(request:TileSetRequest)->int:
 				var sourceId:=newTileSet.add_source(src)
 				maskDict[sourceId] = mask
 				sourceDict[sourceId] = src
-				for x in int(texture.get_size().x/request.size.x):
-					for y in int(texture.get_size().y/request.size.y):
-						src.create_tile(Vector2i(x,y))
 		
-		_tilemapStoredId = -1
-		call_deferred("_loadTileSetDeferred",request,newTileSet,maskDict,sourceDict)
-		_tileSetSemaphore.wait()
+		#PHASE 2 : calc mask + create tile
+		var mergedTerrainStructArray:Array[LoadingTerrainStruct]
+		mergedTerrainStructArray.append_array(request.categoryList)
+		mergedTerrainStructArray.append_array(request.terrainList)
+		for i in mergedTerrainStructArray.size():
+			mergedTerrainStructArray[i].id = i
+		var allSourceCenter:Dictionary[int,Dictionary]
+		var allSourceBorder:Dictionary[int,Dictionary]
+		for sourceId:int in maskDict.keys():
+			var centerValue:Dictionary[Vector2i,int]
+			allSourceCenter[sourceId] = centerValue
+			var borderValue:Dictionary[Vector2i,int]
+			allSourceBorder[sourceId] = borderValue
+			var src := sourceDict[sourceId]
+			var mask := maskDict[sourceId]
+			var gridSize:Vector2i = Vector2(mask.get_size()) / 3
+			for x in gridSize.x:
+				for y in gridSize.y:
+					var center := Vector2i(x,y)*3 + Vector2i.ONE
+					for terrainStruct:LoadingTerrainStruct in mergedTerrainStructArray:
+						if mask.get_pixelv(center).to_rgba32() == terrainStruct.color.to_rgba32():
+							src.create_tile(center/3)
+							centerValue[center] = terrainStruct.id
+							break
+					for terrainStruct:LoadingTerrainStruct in mergedTerrainStructArray:
+						for offset in PEERING_OFFSETS:
+							if mask.get_pixelv(center + offset).to_rgba32() == terrainStruct.color.to_rgba32():
+								borderValue[center+offset] = terrainStruct.id
+		
+		#PHASE 3 : apply
+		call_deferred("_applyTerrain",newTileSet,request,sourceDict,allSourceCenter,allSourceBorder)
+		
+		loadingMutex.lock()
+		id = tileSetArray.size()
+		tileSetArray.append(newTileSet)
+		keyToId[request.key] = id
+		loadingMutex.unlock()
 	
-	if(_tilemapStoredId != -1):return _tilemapStoredId
-	else:return id
-func _loadTileSetDeferred(request:TileSetRequest, newTileSet:TileSet,maskDict:Dictionary[int,Image],sourceDict:Dictionary[int,TileSetAtlasSource])->void:
+	request.destination.set_deferred(request.property, id)
+	return id
+
+func _applyTerrain(newTileSet:TileSet,request:TileSetRequest, sourceDict:Dictionary[int,TileSetAtlasSource],allSourceCenter:Dictionary[int, Dictionary],allSourceBorder:Dictionary[int, Dictionary])->void:
 	var categoryIdDict:Dictionary[String,int] = {}
 	for cat:LoadingTerrainStruct in request.categoryList:
-		cat.id = BetterTerrain.terrain_count(newTileSet)
 		BetterTerrain.add_terrain(newTileSet,cat.key,cat.color,BetterTerrain.TerrainType.CATEGORY)
 		categoryIdDict[cat.key] = cat.id
 	
 	for terrain:LoadingTerrainStruct in request.terrainList:
-		terrain.id = BetterTerrain.terrain_count(newTileSet)
 		var terrainCat:Array[int]
 		for catName:String in terrain.categories:
 			if(categoryIdDict.has(catName)):terrainCat.append(categoryIdDict[catName])
 		BetterTerrain.add_terrain(newTileSet,terrain.key,terrain.color,BetterTerrain.TerrainType.MATCH_TILES,terrainCat)
 	
-	for terrain:LoadingTerrainStruct in request.terrainList:
-		for index:int in maskDict.keys():
-			_applyTileSetMaskCenter(newTileSet,terrain,maskDict[index],sourceDict[index])
-	for cat:LoadingTerrainStruct in request.categoryList:
-		for index:int in maskDict.keys():
-			_applyTileSetMaskCenter(newTileSet,cat,maskDict[index],sourceDict[index])
-	
-	for cat:LoadingTerrainStruct in request.categoryList:
-		for index:int in maskDict.keys():
-			_applyTileSetMaskBorder(newTileSet,cat,maskDict[index],sourceDict[index])
-	for terrain:LoadingTerrainStruct in request.terrainList:
-		for index:int in maskDict.keys():
-			_applyTileSetMaskBorder(newTileSet,terrain,maskDict[index],sourceDict[index])
-	
-	loadingMutex.lock()
-	
-	_tilemapStoredId = tileSetArray.size()
-	tileSetArray.append(newTileSet)
-	keyToId[request.key] = _tilemapStoredId
-	
-	loadingMutex.unlock()
-	request.destination.set_deferred(request.property, _tilemapStoredId)
-	_tileSetSemaphore.post()
-func _applyTileSetMaskCenter(newTileSet:TileSet,rawTerrainData:LoadingTerrainStruct,bitImage:Image, tileSetSource:TileSetAtlasSource)->void:
-	var targetColor := rawTerrainData.color.to_rgba32()
-	var gridSize:Vector2i = Vector2(bitImage.get_size()) / 3
-	
-	for x in gridSize.x:
-		for y in gridSize.y:
-			if(tileSetSource.has_tile(Vector2i(x,y))):
-				var tileData := tileSetSource.get_tile_data(Vector2i(x,y), 0)
-				var center := Vector2i(x,y)*3 + Vector2i.ONE
-				if bitImage.get_pixelv(center).to_rgba32() == targetColor:
-					BetterTerrain.set_tile_terrain_type(newTileSet, tileData, rawTerrainData.id)
-func _applyTileSetMaskBorder(newTileSet:TileSet,rawTerrainData:LoadingTerrainStruct,bitImage:Image, tileSetSource:TileSetAtlasSource)->void:
-	var targetColor := rawTerrainData.color.to_rgba32()
-	var gridSize:Vector2i = Vector2(bitImage.get_size()) / 3
-	
-	for x in gridSize.x:
-		for y in gridSize.y:
-			if(tileSetSource.has_tile(Vector2i(x,y))):
-				var tileData := tileSetSource.get_tile_data(Vector2i(x,y), 0)
-				var center := Vector2i(x,y)*3 + Vector2i.ONE
-				for offset in PEERING_OFFSETS:
-					if bitImage.get_pixelv(center + offset).to_rgba32() == targetColor:
-						BetterTerrain.add_tile_peering_type(newTileSet, tileData, PEERING_OFFSETS[offset], rawTerrainData.id)
-
+	for sourceId in sourceDict.keys():
+		if(allSourceCenter.has(sourceId)):
+			var tileSetAtlasSource:=sourceDict[sourceId]
+			var centerValues:=allSourceCenter[sourceId]
+			for pos:Vector2i in centerValues.keys():
+				var tileData := tileSetAtlasSource.get_tile_data(pos/3, 0)
+				BetterTerrain.set_tile_terrain_type(newTileSet,tileData,centerValues[pos])
+		if(allSourceBorder.has(sourceId)):
+			var tileSetAtlasSource:=sourceDict[sourceId]
+			var borderValues:=allSourceBorder[sourceId]
+			for pos:Vector2i in borderValues.keys():
+				var adjust:=pos%3-Vector2i.ONE
+				var tileData := tileSetAtlasSource.get_tile_data(pos/3, 0)
+				BetterTerrain.add_tile_peering_type(newTileSet,tileData,PEERING_OFFSETS[adjust],borderValues[pos])
 func getTileSetFromId(id:int)->TileSet:
 	var rep:TileSet = null
 	loadingMutex.lock()
@@ -294,7 +289,6 @@ func clear()->void:
 	loadingMutex.unlock()
 func interrupt()->void:
 	if _loadingThread != null && _loadingThread.is_started():
-		if(_tileSetSemaphore.try_wait()):_tileSetSemaphore.post()
 		loadingQueue.clear()
 		putStopRequest()
 		_loadingThread.wait_to_finish()

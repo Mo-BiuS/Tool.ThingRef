@@ -6,9 +6,9 @@ func  _ready() -> void:
 	WorldEvent.stateChanged.connect(_stateChanged)
 	WorldDef.finishedLoading.connect(_finishedLoading)
 	
+	WorldDef.appendDef(TileSetDef)
 	WorldDef.appendDef(ItemDef)
 	WorldDef.appendDef(PlayerDef)
-	WorldDef.appendDef(TileSetDef)
 	WorldDef.appendDef(AudioDef)
 	
 	WorldEvent.setState(E_State.LOADING_RESSOURCE_START)
